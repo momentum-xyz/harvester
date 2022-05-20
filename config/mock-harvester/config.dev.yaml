@@ -1,0 +1,11 @@
+mqtt:
+  host: localhost
+  port: 1883
+  clientId: harvester
+chains:
+  - name: "kusama"
+    topics:
+      society/members:
+          value: "[\"CffzJo8UPWwvwPF73VcbEv4jSG4ckvGwNePL9V52hYh743X\",\"CgGpRVgE8WXd2hjc3GBVxGpnG9KpjkvEGNkM6AAaCBmhQY9\"]"
+          ticker: 6000
+          storage: "SocietyMembers"
