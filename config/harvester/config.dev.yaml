@@ -8,15 +8,22 @@ mqtt:
   host: localhost
   port: 1883
   clientId: harvester
+  maxReconnectAttempts: 3
+  reconnectInterval: 3 # In seconds
   topics:
     exampleTopic: test
 chains:
   - name: "kusama"
     type: "substrate"
     rpc: "wss://kusama-rpc.polkadot.io"
-  # - name: "polkadot"
-  #   type: "substrate"
-  #   rpc: "wss://rpc.polkadot.io"
+    active_topics: ["block-creation-event","block-finalized-event","reward-event","society-members","extrinsics-pool","session"]
+  - name: "westend"
+    type: "substrate"
+    rpc: "wss://westend-rpc.polkadot.io"
+  - name: "polkadot"
+    type: "substrate"
+    rpc: "wss://rpc.polkadot.io"
+enabled_chains: ["kusama"]
 exchange_rate_provider:
   active: "coingecko"
   disableExchangeRateProvider: false
@@ -32,7 +39,7 @@ exchange_rate_provider:
     polkadotUSD: dot_usd
 
 sentry:
-  dsn: https://2195c57248c14a71ae20e358d93ec001@o572058.ingest.sentry.io/5721318
+  dsn:
   env:
   release: harvester@1.0.0
   debugEnable: true

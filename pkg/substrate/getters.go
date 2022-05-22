@@ -34,6 +34,14 @@ func (sh *SubstrateHarvester) GetStorageAtBlockHash(key types.StorageKey, hash t
 	return nil
 }
 
+func (sh *SubstrateHarvester) QueryConstant(prefix string, name string, res interface{}) error {
+	data, err := sh.metadata.FindConstantValue(prefix, name)
+	if err != nil {
+		return err
+	}
+	return types.DecodeFromBytes(data, res)
+}
+
 func (sh *SubstrateHarvester) getCurrentSessionValidators() ([]types.AccountID, error) {
 	key, err := sh.GetStorageDataKey("Session", "Validators", nil)
 	if err != nil {

@@ -61,7 +61,10 @@ func (sh *SubstrateHarvester) getActiveProcesses() []harvester.ActiveHarvesterPr
 
 	var substrateProcesses []harvester.ActiveHarvesterProcess
 	for _, activeProcess := range sh.cfg.ActiveTopics {
-		substrateProcesses = append(substrateProcesses, sh.topicProcessorStore()(activeProcess))
+		ap := sh.topicProcessorStore()(activeProcess)
+		if ap != nil {
+			substrateProcesses = append(substrateProcesses, sh.topicProcessorStore()(activeProcess))
+		}
 	}
 	return substrateProcesses
 }
@@ -74,6 +77,7 @@ func (sh *SubstrateHarvester) topicProcessorStore() func(string) harvester.Activ
 		"reward-event":          sh.ProcessErasRewardPoints,
 		"society-members":       sh.ProcessSocietyMembers,
 		"extrinsics-pool":       sh.ProcessPendingExtrinsics,
+		"session":               sh.ProcessChainSessionState,
 	}
 
 	return func(topic string) harvester.ActiveHarvesterProcess {

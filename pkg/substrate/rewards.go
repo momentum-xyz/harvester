@@ -58,20 +58,15 @@ func (sh *SubstrateHarvester) publishErasRewardPoints() error {
 		return errors.Wrap(err, "error while fetching active era")
 	}
 
-	historyDepth, err := sh.GetActiveEraDepth()
+	activeEraDepth, err := sh.GetEraDepth(activeEra)
 
 	if err != nil {
 		return errors.Wrap(err, "error while fetching active era depth")
 	}
-	key, err := sh.GetStorageDataKey("Staking", "ErasRewardPoints", historyDepth)
-	if err != nil {
-		return errors.Wrapf(err, "error while fetching storage key for erasRewardPoints for history %v", spew.Sdump(historyDepth))
-	}
 
-	var rewards EraRewardPoints
-	err = sh.GetStorageLatest(key, &rewards)
+	rewards, err := sh.GetEraReward(activeEraDepth)
 	if err != nil {
-		return errors.Wrapf(err, "error while fetching storage erasRewardPoints for key %v", spew.Sdump(key))
+		return err
 	}
 
 	rewardsMap := make(map[string]uint32)
@@ -101,54 +96,72 @@ func (sh *SubstrateHarvester) publishErasRewardPoints() error {
 	return nil
 }
 
-// ## TODO FOR REWARD & SLASH EVENTS (upcoming story) AND GOOD REFERENCE OF EXTENDING TO CUSTOM EVENTS
-func (sh *SubstrateHarvester) GetRewardEvents() {
-	// Subscribe to system events via storage
-	key, err := types.CreateStorageKey(sh.metadata, "System", "Events", nil, nil)
+func (sh *SubstrateHarvester) GetEraReward(era []byte) (EraRewardPoints, error) {
+
+	noRewards := EraRewardPoints{}
+
+	key, err := sh.GetStorageDataKey("Staking", "ErasRewardPoints", era)
 	if err != nil {
-		panic(err)
+		return noRewards, errors.Wrapf(err, "error while fetching storage key for erasRewardPoints for era %v", spew.Sdump(era))
 	}
 
-	sub, err := sh.api.RPC.State.SubscribeStorageRaw([]types.StorageKey{key})
+	var rewards EraRewardPoints
+	err = sh.GetStorageLatest(key, &rewards)
 	if err != nil {
-		panic(err)
+		return noRewards, errors.Wrapf(err, "error while fetching storage erasRewardPoints for key %v", spew.Sdump(key))
 	}
-	defer sub.Unsubscribe()
 
-	// outer for loop for subscription notifications
-	for {
-		set := <-sub.Chan()
-		// inner loop for the changes within one of those notifications
-		for _, chng := range set.Changes {
-			if !types.Eq(chng.StorageKey, key) || !chng.HasStorageData {
-				// skip, we are only interested in events with content
-				continue
-			}
-
-			// Decode the event records
-			events := EventRecords{}
-			err = EventRecordsRaw(chng.StorageData).DecodeEventRecords(sh.metadata, &events)
-			if err != nil {
-				//fmt.Println("## ERROR ##")
-				//fmt.Println(err)
-				continue
-			}
-
-			// Show what we are busy with
-			for _, e := range events.Staking_Reward {
-				fmt.Printf("\tStaking:Reward:: (phase=%#v)\n", e.Phase)
-				fmt.Printf("\t\t%v\n", e.Amount)
-				fmt.Println(e)
-			}
-			for _, e := range events.Staking_Slash {
-				fmt.Printf("\tStaking:Slash:: (phase=%#v)\n", e.Phase)
-				fmt.Printf("\t\t%#x%v\n", e.AccountID, e.Balance)
-				fmt.Println(e)
-			}
-
-		}
-	}
+	return rewards, nil
 }
+
+// ## TODO FOR REWARD & SLASH EVENTS (upcoming story) AND GOOD REFERENCE OF EXTENDING TO CUSTOM EVENTS
+// func (sh *SubstrateHarvester) GetRewardEvents() {
+// 	// Subscribe to system events via storage
+// 	key, err := types.CreateStorageKey(sh.metadata, "System", "Events", nil, nil)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+
+// 	sub, err := sh.api.RPC.State.SubscribeStorageRaw([]types.StorageKey{key})
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	defer sub.Unsubscribe()
+
+// 	// outer for loop for subscription notifications
+// 	for {
+// 		set := <-sub.Chan()
+// 		// inner loop for the changes within one of those notifications
+// 		for _, chng := range set.Changes {
+// 			if !types.Eq(chng.StorageKey, key) || !chng.HasStorageData {
+// 				// skip, we are only interested in events with content
+// 				continue
+// 			}
+
+// 			// Decode the event records
+// 			events := EventRecords{}
+// 			err = EventRecordsRaw(chng.StorageData).DecodeEventRecords(sh.metadata, &events)
+// 			if err != nil {
+// 				//fmt.Println("## ERROR ##")
+// 				//fmt.Println(err)
+// 				continue
+// 			}
+
+// 			// Show what we are busy with
+// 			for _, e := range events.Staking_Reward {
+// 				fmt.Printf("\tStaking:Reward:: (phase=%#v)\n", e.Phase)
+// 				fmt.Printf("\t\t%v\n", e.Amount)
+// 				fmt.Println(e)
+// 			}
+// 			for _, e := range events.Staking_Slash {
+// 				fmt.Printf("\tStaking:Slash:: (phase=%#v)\n", e.Phase)
+// 				fmt.Printf("\t\t%#x%v\n", e.AccountID, e.Balance)
+// 				fmt.Println(e)
+// 			}
+
+// 		}
+// 	}
+// }
 
 type EventRecordsRaw []byte
 
