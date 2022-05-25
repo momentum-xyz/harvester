@@ -1,0 +1,44 @@
+mysql:
+  database: "harvester_dev"
+  url: "localhost"
+  port: 3306
+  username: "root"
+  migrate: true
+mqtt:
+  host: localhost
+  port: 1883
+  clientId: harvester
+  topics:
+    exampleTopic: test
+chains:
+#  - name: "kusama"
+#    type: "substrate"
+#    rpc: "wss://kusama-rpc.polkadot.io"
+  - name: "westend"
+    type: "substrate"
+    rpc: "wss://westend-rpc.polkadot.io"
+  # - name: "polkadot"
+  #   type: "substrate"
+  #   rpc: "wss://rpc.polkadot.io"
+exchange_rate_provider:
+  active: "coingecko"
+  disableExchangeRateProvider: false
+  pushInterval: 10 # In seconds
+  coingecko: 
+    endpoint: https://api.coingecko.com
+    apiKey: 
+  coinranking:
+    endpoint: 
+    apiKey: 
+  topics:
+    kusamaUSD: ksm_usd
+    polkadotUSD: dot_usd
+
+sentry:
+  dsn:
+  env: 
+  release: harvester@1.0.0
+  debugEnable: true
+  attachStacktrace: true
+
+loglevel: debug
