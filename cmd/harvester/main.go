@@ -6,6 +6,7 @@ import (
 	"github.com/OdysseyMomentumExperience/harvester/pkg/actors"
 	"github.com/OdysseyMomentumExperience/harvester/pkg/harvester"
 	"github.com/OdysseyMomentumExperience/harvester/pkg/log"
+	"github.com/getsentry/sentry-go"
 )
 
 const configFileName = "config/harvester/config.dev.yaml"
