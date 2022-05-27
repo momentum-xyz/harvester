@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"time"
 
 	"github.com/OdysseyMomentumExperience/harvester/pkg/actors"
@@ -9,13 +10,15 @@ import (
 	"github.com/getsentry/sentry-go"
 )
 
-const configFileName = "config/harvester/config.dev.yaml"
-
 func main() {
 
 	var err error
 
-	cfg := harvester.GetConfig(configFileName, true)
+	configPath, ok := os.LookupEnv("CONFIG_PATH")
+	if !ok {
+		configPath = "config.yaml"
+	}
+	cfg := harvester.GetConfig(configPath, true)
 	cfg.PrettyPrint()
 
 	err = sentry.Init(sentry.ClientOptions{
