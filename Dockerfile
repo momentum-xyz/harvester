@@ -1,20 +1,22 @@
-FROM golang:1.17.3-alpine as build
+# syntax=docker/dockerfile:1.3
+FROM golang:1.18.2-alpine3.16 as build
 
-COPY . /usr/src/code
-WORKDIR /usr/src/code
+WORKDIR /src
+
+# Seperate step to allow docker layer caching
+COPY go.* ./
+RUN go mod download
+
+COPY . ./
 RUN go build ./cmd/harvester/...
 
-FROM alpine:latest as production-build
 
-RUN apk add --update --no-cache supervisor && rm -rf /var/cache/apk/*
+FROM alpine:3.16.0 as runtime
 
-RUN mkdir /opt/code
-COPY --from=build /usr/src/code/harvester /opt/code/harvester
-COPY --from=build /usr/src/code/config.yaml /opt/code/config.yaml
+WORKDIR /srv
 
-ADD supervisord.conf /etc/supervisord.conf
+COPY --from=build /src/harvester /srv/harvester
+COPY --from=build /src/config.yaml /srv/config.yaml
 
-# This command runs your application, comment out this line to compile only
-CMD ["/usr/bin/supervisord","-n", "-c", "/etc/supervisord.conf"]
+CMD ["/srv/harvester"]
 
-LABEL Name=pengine Version=0.0.1
