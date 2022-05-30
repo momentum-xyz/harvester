@@ -61,7 +61,10 @@ func (sh *SubstrateHarvester) getActiveProcesses() []harvester.ActiveHarvesterPr
 
 	var substrateProcesses []harvester.ActiveHarvesterProcess
 	for _, activeProcess := range sh.cfg.ActiveTopics {
-		substrateProcesses = append(substrateProcesses, sh.topicProcessorStore()(activeProcess))
+		ap := sh.topicProcessorStore()(activeProcess)
+		if ap != nil {
+			substrateProcesses = append(substrateProcesses, sh.topicProcessorStore()(activeProcess))
+		}
 	}
 	return substrateProcesses
 }
