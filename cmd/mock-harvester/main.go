@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/OdysseyMomentumExperience/harvester/pkg/harvester"
 	"github.com/OdysseyMomentumExperience/harvester/pkg/log"
 	"github.com/OdysseyMomentumExperience/harvester/pkg/mock_harvester"
@@ -12,7 +14,6 @@ import (
 	gsrpc "github.com/centrifuge/go-substrate-rpc-client/v4"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/vedhavyas/go-subkey"
-	"time"
 )
 
 const configFileName = "config/mock-harvester/config.dev.yaml"
@@ -21,7 +22,7 @@ func main() {
 	var err error
 
 	cfg := mock_harvester.GetConfig(configFileName, true)
-	mqttClient := mqtt.GetMQTTClient(&cfg.MQTT)
+	mqttClient := mqtt.GetMQTTClient(&cfg.MQTT, func(err error) {})
 
 	publisher, err := publisher.NewPublisher(mqttClient)
 	if err != nil {

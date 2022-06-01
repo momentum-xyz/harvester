@@ -22,6 +22,19 @@ func (f BlockFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error
 	return f(ctx, mv)
 }
 
+// The ValidatorFunc type is an adapter to allow the use of ordinary
+// function as Validator mutator.
+type ValidatorFunc func(context.Context, *ent.ValidatorMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ValidatorFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.ValidatorMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ValidatorMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // Condition is a hook condition function.
 type Condition func(context.Context, ent.Mutation) bool
 

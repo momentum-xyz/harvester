@@ -29,6 +29,8 @@ type RawBabePreDigestCompat struct {
 
 func (sh *SubstrateHarvester) ProcessNewHeader(ctx context.Context, fn harvester.ErrorHandler) error {
 
+	log.Debug("proccesing new headers")
+
 	ticker := time.NewTicker(2 * time.Second)
 
 	defer ticker.Stop()

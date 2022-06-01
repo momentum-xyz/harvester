@@ -77,6 +77,8 @@ func (sh *SubstrateHarvester) topicProcessorStore() func(string) harvester.Activ
 		"reward-event":          sh.ProcessErasRewardPoints,
 		"society-members":       sh.ProcessSocietyMembers,
 		"extrinsics-pool":       sh.ProcessPendingExtrinsics,
+		"validators":            sh.ProcessValidators,
+		"session":               sh.ProcessChainSessionState,
 	}
 
 	return func(topic string) harvester.ActiveHarvesterProcess {

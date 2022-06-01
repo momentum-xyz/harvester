@@ -7,6 +7,7 @@ require (
 	entgo.io/ent v0.10.2-0.20220512043615-f2e0bef7a803
 	github.com/centrifuge/go-substrate-rpc-client/v4 v4.0.1-0.20220329191920-7855f9f3f6e6
 	github.com/davecgh/go-spew v1.1.1
+	github.com/decred/base58 v1.0.3
 	github.com/eclipse/paho.mqtt.golang v1.3.5
 	github.com/getsentry/sentry-go v0.13.0
 	github.com/go-sql-driver/mysql v1.6.0
@@ -28,7 +29,6 @@ require (
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
 	github.com/deckarep/golang-set v1.8.0 // indirect
-	github.com/decred/base58 v1.0.3 // indirect
 	github.com/decred/dcrd/crypto/blake256 v1.0.0 // indirect
 	github.com/ethereum/go-ethereum v1.10.17 // indirect
 	github.com/go-openapi/inflect v0.19.0 // indirect

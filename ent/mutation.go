@@ -10,6 +10,7 @@ import (
 
 	"github.com/OdysseyMomentumExperience/harvester/ent/block"
 	"github.com/OdysseyMomentumExperience/harvester/ent/predicate"
+	"github.com/OdysseyMomentumExperience/harvester/ent/validator"
 	"github.com/OdysseyMomentumExperience/harvester/pkg/harvester"
 
 	"entgo.io/ent"
@@ -24,7 +25,8 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeBlock = "Block"
+	TypeBlock     = "Block"
+	TypeValidator = "Validator"
 )
 
 // BlockMutation represents an operation that mutates the Block nodes in the graph.
@@ -697,4 +699,1107 @@ func (m *BlockMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *BlockMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Block edge %s", name)
+}
+
+// ValidatorMutation represents an operation that mutates the Validator nodes in the graph.
+type ValidatorMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *int
+	account_id    *string
+	name          *string
+	commission    *float64
+	addcommission *float64
+	status        *string
+	balance       *string
+	reserved      *string
+	locked        *[]harvester.ValidatorBalancesLocked
+	own_stake     *string
+	total_stake   *string
+	identity      *harvester.ValidatorInfo
+	nominators    *[]harvester.Nominator
+	parent        *harvester.Parent
+	children      *[]string
+	hash          *string
+	chain         *string
+	clearedFields map[string]struct{}
+	done          bool
+	oldValue      func(context.Context) (*Validator, error)
+	predicates    []predicate.Validator
+}
+
+var _ ent.Mutation = (*ValidatorMutation)(nil)
+
+// validatorOption allows management of the mutation configuration using functional options.
+type validatorOption func(*ValidatorMutation)
+
+// newValidatorMutation creates new mutation for the Validator entity.
+func newValidatorMutation(c config, op Op, opts ...validatorOption) *ValidatorMutation {
+	m := &ValidatorMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeValidator,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withValidatorID sets the ID field of the mutation.
+func withValidatorID(id int) validatorOption {
+	return func(m *ValidatorMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Validator
+		)
+		m.oldValue = func(ctx context.Context) (*Validator, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Validator.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withValidator sets the old Validator of the mutation.
+func withValidator(node *Validator) validatorOption {
+	return func(m *ValidatorMutation) {
+		m.oldValue = func(context.Context) (*Validator, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ValidatorMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ValidatorMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ValidatorMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ValidatorMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Validator.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetAccountID sets the "account_id" field.
+func (m *ValidatorMutation) SetAccountID(s string) {
+	m.account_id = &s
+}
+
+// AccountID returns the value of the "account_id" field in the mutation.
+func (m *ValidatorMutation) AccountID() (r string, exists bool) {
+	v := m.account_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountID returns the old "account_id" field's value of the Validator entity.
+// If the Validator object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ValidatorMutation) OldAccountID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountID: %w", err)
+	}
+	return oldValue.AccountID, nil
+}
+
+// ResetAccountID resets all changes to the "account_id" field.
+func (m *ValidatorMutation) ResetAccountID() {
+	m.account_id = nil
+}
+
+// SetName sets the "name" field.
+func (m *ValidatorMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *ValidatorMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the Validator entity.
+// If the Validator object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ValidatorMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *ValidatorMutation) ResetName() {
+	m.name = nil
+}
+
+// SetCommission sets the "commission" field.
+func (m *ValidatorMutation) SetCommission(f float64) {
+	m.commission = &f
+	m.addcommission = nil
+}
+
+// Commission returns the value of the "commission" field in the mutation.
+func (m *ValidatorMutation) Commission() (r float64, exists bool) {
+	v := m.commission
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCommission returns the old "commission" field's value of the Validator entity.
+// If the Validator object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ValidatorMutation) OldCommission(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCommission is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCommission requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCommission: %w", err)
+	}
+	return oldValue.Commission, nil
+}
+
+// AddCommission adds f to the "commission" field.
+func (m *ValidatorMutation) AddCommission(f float64) {
+	if m.addcommission != nil {
+		*m.addcommission += f
+	} else {
+		m.addcommission = &f
+	}
+}
+
+// AddedCommission returns the value that was added to the "commission" field in this mutation.
+func (m *ValidatorMutation) AddedCommission() (r float64, exists bool) {
+	v := m.addcommission
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCommission resets all changes to the "commission" field.
+func (m *ValidatorMutation) ResetCommission() {
+	m.commission = nil
+	m.addcommission = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *ValidatorMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *ValidatorMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the Validator entity.
+// If the Validator object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ValidatorMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *ValidatorMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetBalance sets the "balance" field.
+func (m *ValidatorMutation) SetBalance(s string) {
+	m.balance = &s
+}
+
+// Balance returns the value of the "balance" field in the mutation.
+func (m *ValidatorMutation) Balance() (r string, exists bool) {
+	v := m.balance
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBalance returns the old "balance" field's value of the Validator entity.
+// If the Validator object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ValidatorMutation) OldBalance(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBalance is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBalance requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBalance: %w", err)
+	}
+	return oldValue.Balance, nil
+}
+
+// ResetBalance resets all changes to the "balance" field.
+func (m *ValidatorMutation) ResetBalance() {
+	m.balance = nil
+}
+
+// SetReserved sets the "reserved" field.
+func (m *ValidatorMutation) SetReserved(s string) {
+	m.reserved = &s
+}
+
+// Reserved returns the value of the "reserved" field in the mutation.
+func (m *ValidatorMutation) Reserved() (r string, exists bool) {
+	v := m.reserved
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReserved returns the old "reserved" field's value of the Validator entity.
+// If the Validator object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ValidatorMutation) OldReserved(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReserved is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReserved requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReserved: %w", err)
+	}
+	return oldValue.Reserved, nil
+}
+
+// ResetReserved resets all changes to the "reserved" field.
+func (m *ValidatorMutation) ResetReserved() {
+	m.reserved = nil
+}
+
+// SetLocked sets the "locked" field.
+func (m *ValidatorMutation) SetLocked(hbl []harvester.ValidatorBalancesLocked) {
+	m.locked = &hbl
+}
+
+// Locked returns the value of the "locked" field in the mutation.
+func (m *ValidatorMutation) Locked() (r []harvester.ValidatorBalancesLocked, exists bool) {
+	v := m.locked
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLocked returns the old "locked" field's value of the Validator entity.
+// If the Validator object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ValidatorMutation) OldLocked(ctx context.Context) (v []harvester.ValidatorBalancesLocked, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLocked is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLocked requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLocked: %w", err)
+	}
+	return oldValue.Locked, nil
+}
+
+// ResetLocked resets all changes to the "locked" field.
+func (m *ValidatorMutation) ResetLocked() {
+	m.locked = nil
+}
+
+// SetOwnStake sets the "own_stake" field.
+func (m *ValidatorMutation) SetOwnStake(s string) {
+	m.own_stake = &s
+}
+
+// OwnStake returns the value of the "own_stake" field in the mutation.
+func (m *ValidatorMutation) OwnStake() (r string, exists bool) {
+	v := m.own_stake
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOwnStake returns the old "own_stake" field's value of the Validator entity.
+// If the Validator object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ValidatorMutation) OldOwnStake(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOwnStake is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOwnStake requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOwnStake: %w", err)
+	}
+	return oldValue.OwnStake, nil
+}
+
+// ResetOwnStake resets all changes to the "own_stake" field.
+func (m *ValidatorMutation) ResetOwnStake() {
+	m.own_stake = nil
+}
+
+// SetTotalStake sets the "total_stake" field.
+func (m *ValidatorMutation) SetTotalStake(s string) {
+	m.total_stake = &s
+}
+
+// TotalStake returns the value of the "total_stake" field in the mutation.
+func (m *ValidatorMutation) TotalStake() (r string, exists bool) {
+	v := m.total_stake
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTotalStake returns the old "total_stake" field's value of the Validator entity.
+// If the Validator object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ValidatorMutation) OldTotalStake(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTotalStake is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTotalStake requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTotalStake: %w", err)
+	}
+	return oldValue.TotalStake, nil
+}
+
+// ResetTotalStake resets all changes to the "total_stake" field.
+func (m *ValidatorMutation) ResetTotalStake() {
+	m.total_stake = nil
+}
+
+// SetIdentity sets the "identity" field.
+func (m *ValidatorMutation) SetIdentity(hi harvester.ValidatorInfo) {
+	m.identity = &hi
+}
+
+// Identity returns the value of the "identity" field in the mutation.
+func (m *ValidatorMutation) Identity() (r harvester.ValidatorInfo, exists bool) {
+	v := m.identity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIdentity returns the old "identity" field's value of the Validator entity.
+// If the Validator object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ValidatorMutation) OldIdentity(ctx context.Context) (v harvester.ValidatorInfo, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIdentity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIdentity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIdentity: %w", err)
+	}
+	return oldValue.Identity, nil
+}
+
+// ResetIdentity resets all changes to the "identity" field.
+func (m *ValidatorMutation) ResetIdentity() {
+	m.identity = nil
+}
+
+// SetNominators sets the "nominators" field.
+func (m *ValidatorMutation) SetNominators(h []harvester.Nominator) {
+	m.nominators = &h
+}
+
+// Nominators returns the value of the "nominators" field in the mutation.
+func (m *ValidatorMutation) Nominators() (r []harvester.Nominator, exists bool) {
+	v := m.nominators
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNominators returns the old "nominators" field's value of the Validator entity.
+// If the Validator object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ValidatorMutation) OldNominators(ctx context.Context) (v []harvester.Nominator, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNominators is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNominators requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNominators: %w", err)
+	}
+	return oldValue.Nominators, nil
+}
+
+// ResetNominators resets all changes to the "nominators" field.
+func (m *ValidatorMutation) ResetNominators() {
+	m.nominators = nil
+}
+
+// SetParent sets the "parent" field.
+func (m *ValidatorMutation) SetParent(h harvester.Parent) {
+	m.parent = &h
+}
+
+// Parent returns the value of the "parent" field in the mutation.
+func (m *ValidatorMutation) Parent() (r harvester.Parent, exists bool) {
+	v := m.parent
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldParent returns the old "parent" field's value of the Validator entity.
+// If the Validator object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ValidatorMutation) OldParent(ctx context.Context) (v harvester.Parent, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldParent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldParent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldParent: %w", err)
+	}
+	return oldValue.Parent, nil
+}
+
+// ResetParent resets all changes to the "parent" field.
+func (m *ValidatorMutation) ResetParent() {
+	m.parent = nil
+}
+
+// SetChildren sets the "children" field.
+func (m *ValidatorMutation) SetChildren(s []string) {
+	m.children = &s
+}
+
+// Children returns the value of the "children" field in the mutation.
+func (m *ValidatorMutation) Children() (r []string, exists bool) {
+	v := m.children
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChildren returns the old "children" field's value of the Validator entity.
+// If the Validator object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ValidatorMutation) OldChildren(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChildren is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChildren requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChildren: %w", err)
+	}
+	return oldValue.Children, nil
+}
+
+// ResetChildren resets all changes to the "children" field.
+func (m *ValidatorMutation) ResetChildren() {
+	m.children = nil
+}
+
+// SetHash sets the "hash" field.
+func (m *ValidatorMutation) SetHash(s string) {
+	m.hash = &s
+}
+
+// Hash returns the value of the "hash" field in the mutation.
+func (m *ValidatorMutation) Hash() (r string, exists bool) {
+	v := m.hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHash returns the old "hash" field's value of the Validator entity.
+// If the Validator object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ValidatorMutation) OldHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHash: %w", err)
+	}
+	return oldValue.Hash, nil
+}
+
+// ResetHash resets all changes to the "hash" field.
+func (m *ValidatorMutation) ResetHash() {
+	m.hash = nil
+}
+
+// SetChain sets the "chain" field.
+func (m *ValidatorMutation) SetChain(s string) {
+	m.chain = &s
+}
+
+// Chain returns the value of the "chain" field in the mutation.
+func (m *ValidatorMutation) Chain() (r string, exists bool) {
+	v := m.chain
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChain returns the old "chain" field's value of the Validator entity.
+// If the Validator object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ValidatorMutation) OldChain(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChain is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChain requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChain: %w", err)
+	}
+	return oldValue.Chain, nil
+}
+
+// ResetChain resets all changes to the "chain" field.
+func (m *ValidatorMutation) ResetChain() {
+	m.chain = nil
+}
+
+// Where appends a list predicates to the ValidatorMutation builder.
+func (m *ValidatorMutation) Where(ps ...predicate.Validator) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *ValidatorMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (Validator).
+func (m *ValidatorMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ValidatorMutation) Fields() []string {
+	fields := make([]string, 0, 15)
+	if m.account_id != nil {
+		fields = append(fields, validator.FieldAccountID)
+	}
+	if m.name != nil {
+		fields = append(fields, validator.FieldName)
+	}
+	if m.commission != nil {
+		fields = append(fields, validator.FieldCommission)
+	}
+	if m.status != nil {
+		fields = append(fields, validator.FieldStatus)
+	}
+	if m.balance != nil {
+		fields = append(fields, validator.FieldBalance)
+	}
+	if m.reserved != nil {
+		fields = append(fields, validator.FieldReserved)
+	}
+	if m.locked != nil {
+		fields = append(fields, validator.FieldLocked)
+	}
+	if m.own_stake != nil {
+		fields = append(fields, validator.FieldOwnStake)
+	}
+	if m.total_stake != nil {
+		fields = append(fields, validator.FieldTotalStake)
+	}
+	if m.identity != nil {
+		fields = append(fields, validator.FieldIdentity)
+	}
+	if m.nominators != nil {
+		fields = append(fields, validator.FieldNominators)
+	}
+	if m.parent != nil {
+		fields = append(fields, validator.FieldParent)
+	}
+	if m.children != nil {
+		fields = append(fields, validator.FieldChildren)
+	}
+	if m.hash != nil {
+		fields = append(fields, validator.FieldHash)
+	}
+	if m.chain != nil {
+		fields = append(fields, validator.FieldChain)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ValidatorMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case validator.FieldAccountID:
+		return m.AccountID()
+	case validator.FieldName:
+		return m.Name()
+	case validator.FieldCommission:
+		return m.Commission()
+	case validator.FieldStatus:
+		return m.Status()
+	case validator.FieldBalance:
+		return m.Balance()
+	case validator.FieldReserved:
+		return m.Reserved()
+	case validator.FieldLocked:
+		return m.Locked()
+	case validator.FieldOwnStake:
+		return m.OwnStake()
+	case validator.FieldTotalStake:
+		return m.TotalStake()
+	case validator.FieldIdentity:
+		return m.Identity()
+	case validator.FieldNominators:
+		return m.Nominators()
+	case validator.FieldParent:
+		return m.Parent()
+	case validator.FieldChildren:
+		return m.Children()
+	case validator.FieldHash:
+		return m.Hash()
+	case validator.FieldChain:
+		return m.Chain()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ValidatorMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case validator.FieldAccountID:
+		return m.OldAccountID(ctx)
+	case validator.FieldName:
+		return m.OldName(ctx)
+	case validator.FieldCommission:
+		return m.OldCommission(ctx)
+	case validator.FieldStatus:
+		return m.OldStatus(ctx)
+	case validator.FieldBalance:
+		return m.OldBalance(ctx)
+	case validator.FieldReserved:
+		return m.OldReserved(ctx)
+	case validator.FieldLocked:
+		return m.OldLocked(ctx)
+	case validator.FieldOwnStake:
+		return m.OldOwnStake(ctx)
+	case validator.FieldTotalStake:
+		return m.OldTotalStake(ctx)
+	case validator.FieldIdentity:
+		return m.OldIdentity(ctx)
+	case validator.FieldNominators:
+		return m.OldNominators(ctx)
+	case validator.FieldParent:
+		return m.OldParent(ctx)
+	case validator.FieldChildren:
+		return m.OldChildren(ctx)
+	case validator.FieldHash:
+		return m.OldHash(ctx)
+	case validator.FieldChain:
+		return m.OldChain(ctx)
+	}
+	return nil, fmt.Errorf("unknown Validator field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ValidatorMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case validator.FieldAccountID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountID(v)
+		return nil
+	case validator.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case validator.FieldCommission:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCommission(v)
+		return nil
+	case validator.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case validator.FieldBalance:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBalance(v)
+		return nil
+	case validator.FieldReserved:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReserved(v)
+		return nil
+	case validator.FieldLocked:
+		v, ok := value.([]harvester.ValidatorBalancesLocked)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLocked(v)
+		return nil
+	case validator.FieldOwnStake:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOwnStake(v)
+		return nil
+	case validator.FieldTotalStake:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTotalStake(v)
+		return nil
+	case validator.FieldIdentity:
+		v, ok := value.(harvester.ValidatorInfo)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIdentity(v)
+		return nil
+	case validator.FieldNominators:
+		v, ok := value.([]harvester.Nominator)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNominators(v)
+		return nil
+	case validator.FieldParent:
+		v, ok := value.(harvester.Parent)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetParent(v)
+		return nil
+	case validator.FieldChildren:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChildren(v)
+		return nil
+	case validator.FieldHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHash(v)
+		return nil
+	case validator.FieldChain:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChain(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Validator field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ValidatorMutation) AddedFields() []string {
+	var fields []string
+	if m.addcommission != nil {
+		fields = append(fields, validator.FieldCommission)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ValidatorMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case validator.FieldCommission:
+		return m.AddedCommission()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ValidatorMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case validator.FieldCommission:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCommission(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Validator numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ValidatorMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ValidatorMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ValidatorMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Validator nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ValidatorMutation) ResetField(name string) error {
+	switch name {
+	case validator.FieldAccountID:
+		m.ResetAccountID()
+		return nil
+	case validator.FieldName:
+		m.ResetName()
+		return nil
+	case validator.FieldCommission:
+		m.ResetCommission()
+		return nil
+	case validator.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case validator.FieldBalance:
+		m.ResetBalance()
+		return nil
+	case validator.FieldReserved:
+		m.ResetReserved()
+		return nil
+	case validator.FieldLocked:
+		m.ResetLocked()
+		return nil
+	case validator.FieldOwnStake:
+		m.ResetOwnStake()
+		return nil
+	case validator.FieldTotalStake:
+		m.ResetTotalStake()
+		return nil
+	case validator.FieldIdentity:
+		m.ResetIdentity()
+		return nil
+	case validator.FieldNominators:
+		m.ResetNominators()
+		return nil
+	case validator.FieldParent:
+		m.ResetParent()
+		return nil
+	case validator.FieldChildren:
+		m.ResetChildren()
+		return nil
+	case validator.FieldHash:
+		m.ResetHash()
+		return nil
+	case validator.FieldChain:
+		m.ResetChain()
+		return nil
+	}
+	return fmt.Errorf("unknown Validator field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ValidatorMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ValidatorMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ValidatorMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ValidatorMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ValidatorMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ValidatorMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ValidatorMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown Validator unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ValidatorMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown Validator edge %s", name)
 }
