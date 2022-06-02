@@ -26,12 +26,12 @@ It is possible to harvest data from different chains concurrently by setting the
 The harvester has MQTT and MySQL as dependencies.
 
 ## Run database migrations
-
+`make req`
 `make db-migrate-up`
 <br/>
 or
 <br/>
-`make db-migrate-up --database=mysql://root@password@tcp(localhost:3306)/harvester`
+`make db-migrate-up --database=mysql://root@password@tcp(localhost:3306)/harvester_dev`
 
 ## Test
 

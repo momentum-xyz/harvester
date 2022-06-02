@@ -15,11 +15,14 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-const configFileName = "config.yaml"
-
 func main() {
 	if len(os.Args) < 2 {
 		log.Fatalln("migration name is required")
+	}
+
+	configPath, ok := os.LookupEnv("CONFIG_PATH")
+	if !ok {
+		configPath = "config.yaml"
 	}
 
 	dir, err := migrate.NewLocalDir("./ent/migrations")
@@ -34,7 +37,7 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	cfg := harvester.GetConfig(configFileName, true)
+	cfg := harvester.GetConfig(configPath, true)
 	mysqlConfig := mysql.GetMYSQLConfig(&cfg.MySQL)
 	drv, err := sql.Open("mysql", mysqlConfig.FormatDSN())
 

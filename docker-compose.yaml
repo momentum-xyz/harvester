@@ -2,11 +2,11 @@
 version: "3"
 
 services:
-  adminer:
-    image: adminer
+  phpmyadmin:
+    image: phpmyadmin
     restart: always
     ports:
-      - 9003:8080
+      - 9003:80
   db:
     image: mysql:5.7
     platform: linux/x86_64

@@ -24,9 +24,35 @@ var (
 		Columns:    BlocksColumns,
 		PrimaryKey: []*schema.Column{BlocksColumns[0]},
 	}
+	// ValidatorsColumns holds the columns for the "validators" table.
+	ValidatorsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "account_id", Type: field.TypeString},
+		{Name: "name", Type: field.TypeString},
+		{Name: "commission", Type: field.TypeFloat64},
+		{Name: "status", Type: field.TypeString},
+		{Name: "balance", Type: field.TypeString},
+		{Name: "reserved", Type: field.TypeString},
+		{Name: "locked", Type: field.TypeJSON},
+		{Name: "own_stake", Type: field.TypeString},
+		{Name: "total_stake", Type: field.TypeString},
+		{Name: "identity", Type: field.TypeJSON},
+		{Name: "nominators", Type: field.TypeJSON},
+		{Name: "parent", Type: field.TypeJSON},
+		{Name: "children", Type: field.TypeJSON},
+		{Name: "hash", Type: field.TypeString},
+		{Name: "chain", Type: field.TypeString},
+	}
+	// ValidatorsTable holds the schema information for the "validators" table.
+	ValidatorsTable = &schema.Table{
+		Name:       "validators",
+		Columns:    ValidatorsColumns,
+		PrimaryKey: []*schema.Column{ValidatorsColumns[0]},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		BlocksTable,
+		ValidatorsTable,
 	}
 )
 

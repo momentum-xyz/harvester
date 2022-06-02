@@ -29,7 +29,7 @@ db-make-migrations:
 db-migrate-up:
 	migrate \
 		-source $(if $(source:-=),$(source),'file://ent/migrations') \
-		-database $(if $(database:-=),$(database),'mysql://root@tcp(localhost:3306)/harvester_dev') up
+		-database $(if $(database:-=),$(database),'mysql://root@tcp(localhost:3306)/harvester_dev?multiStatements=true') up
 
 db-migrate-down:
 	migrate \
