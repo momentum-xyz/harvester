@@ -11,7 +11,7 @@ type Config struct {
 }
 
 func (x *Config) Init() {
-	x.Database = "harvester_dev"
+	x.Database = "harvester"
 	x.Host = "localhost"
 	x.Password = ""
 	x.Username = "root"

@@ -25,30 +25,34 @@ func main() {
 		configPath = "config.yaml"
 	}
 
-	dir, err := migrate.NewLocalDir("./ent/migrations")
+	dir, err := migrate.NewLocalDir("./migrations")
+
 	if err != nil {
 		log.Fatalln(err)
 	}
 	graph, err := entc.LoadGraph("./ent/schema", &gen.Config{})
+
 	if err != nil {
 		log.Fatalln(err)
 	}
 	tbls, err := graph.Tables()
+
 	if err != nil {
 		log.Fatalln(err)
 	}
 	cfg := harvester.GetConfig(configPath, true)
 	mysqlConfig := mysql.GetMYSQLConfig(&cfg.MySQL)
 	drv, err := sql.Open("mysql", mysqlConfig.FormatDSN())
-
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	m, err := schema.NewMigrate(drv, schema.WithDir(dir))
+
 	if err != nil {
 		log.Fatalln(err)
 	}
+
 	if err := m.NamedDiff(context.Background(), os.Args[1], tbls...); err != nil {
 		log.Fatalln(err)
 	}

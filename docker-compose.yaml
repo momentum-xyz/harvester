@@ -13,11 +13,13 @@ services:
     command: --default-authentication-plugin=mysql_native_password
     restart: unless-stopped
     environment:
-      MYSQL_ALLOW_EMPTY_PASSWORD: "true"
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
+      MYSQL_DATABASE: 'harvester'     
     volumes:
       - "./scripts/mysql/:/docker-entrypoint-initdb.d"
     ports:
       - 3306:3306
+    
   mosquitto:
     hostname: mosquitto
     image: eclipse-mosquitto:latest
