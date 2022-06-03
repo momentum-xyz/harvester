@@ -1,5 +1,5 @@
 mysql:
-  database: "harvester_dev"
+  database: "harvester"
   url: "localhost"
   port: 3306
   username: "root"
