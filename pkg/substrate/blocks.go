@@ -31,6 +31,10 @@ func (sh *SubstrateHarvester) ProcessNewHeader(ctx context.Context, fn harvester
 
 	log.Debug("proccesing new headers")
 
+	go func() {
+		sh.ProcessSlashes(ctx, fn)
+	}()
+
 	ticker := time.NewTicker(2 * time.Second)
 
 	defer ticker.Stop()
