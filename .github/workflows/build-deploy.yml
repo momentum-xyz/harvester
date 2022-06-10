@@ -5,7 +5,7 @@ on:
     branches:
       - develop
       - master
-      - shrubbery
+      - release/*
 
     tags:
       - v[0-9]+.[0-9]+.[0-9]+*
@@ -15,7 +15,7 @@ jobs:
     runs-on: self-hosted  # ubuntu-latest
     steps:
       - id: build
-        uses: OdysseyMomentumExperience/docker-build-action@v3.0.3
+        uses: momentum-xyz/docker-build-action@v4
         with:
           registry-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
           registry-user: ${{ secrets.REGISTRY_USERNAME }}
@@ -24,15 +24,27 @@ jobs:
     outputs:
       version: ${{ steps.build.outputs.version }}
   dev-deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: build
-    if: ${{ github.ref == 'refs/heads/develop'}}
+    if: github.ref == 'refs/heads/develop'
+    concurrency: dev-deploy-${{ github.ref }}
     steps:
       - id: deploy-dev
-        uses: OdysseyMomentumExperience/deploy-action@v1
+        uses: momentum-xyz/deploy-action@v1
         with:
           version: ${{ env.VERSION }}
           k8s-credentials: ${{ secrets[secrets.REF_K8S_DEV] }}
+  dev-release-deploy:
+    runs-on: self-hosted
+    needs: build
+    if: ${{ startsWith(github.ref, 'refs/heads/release/v') }}
+    concurrency: dev-deploy-${{ github.ref }}
+    steps:
+      - id: deploy-dev
+        uses: momentum-xyz/deploy-action@v1
+        with:
+          version: ${{ env.VERSION }}
+          k8s-credentials: ${{ secrets[secrets.REF_K8S_DEV_REL] }}
   ops-deploy:
     runs-on: ubuntu-latest
     needs: build
@@ -46,6 +58,6 @@ jobs:
         uses: peter-evans/repository-dispatch@v1
         with:
           token: ${{ secrets.ODYSSEY_OPERATIONS }}
-          repository: OdysseyMomentumExperience/Operations
+          repository: momentum-xyz/Operations
           event-type: make-acc-pr
           client-payload: '{"name": "${{ env.PROJECT_NAME }}", "version": "${{ env.VERSION }}", "actor": "${{ github.event.actor.login }}"}'
