@@ -17,7 +17,10 @@ import (
 	"github.com/vedhavyas/go-subkey"
 )
 
-func (sh *SubstrateHarvester) ProcessValidators(ctx context.Context, fn harvester.ErrorHandler) error {
+func (sh *SubstrateHarvester) ProcessValidators(ctx context.Context,
+	fn harvester.ErrorHandler,
+	pmc harvester.PerformanceMonitorClient,
+	topic string) error {
 	log.Debug("processing validators")
 
 	ticker := time.NewTicker(5 * time.Minute)
@@ -27,7 +30,7 @@ func (sh *SubstrateHarvester) ProcessValidators(ctx context.Context, fn harveste
 		var err error
 		select {
 		case <-ticker.C:
-			err = sh.updateValidators()
+			err = sh.updateValidators(fn, pmc, topic)
 		case <-ctx.Done():
 			return ctx.Err()
 		}
@@ -38,8 +41,11 @@ func (sh *SubstrateHarvester) ProcessValidators(ctx context.Context, fn harveste
 	}
 }
 
-func (sh *SubstrateHarvester) updateValidators() error {
+func (sh *SubstrateHarvester) updateValidators(fn harvester.ErrorHandler,
+	pmc harvester.PerformanceMonitorClient,
+	topic string) error {
 	// Get all known stashAccounts
+	defer pmc.WriteProcessResponseMetrics(time.Now(), topic, fn)
 	stashAccounts, err := sh.getStashAccounts()
 	if err != nil {
 		return err
@@ -166,7 +172,7 @@ func (sh *SubstrateHarvester) updateValidators() error {
 			}
 
 			log.Debugf("%s - Publishing validator update for account: %s", sh.cfg.Name, node)
-			err = sh.publisher.PublishRetained(fmt.Sprintf("harvester/%s/validators/%s", sh.cfg.Name, node), string(validatorJson))
+			err = sh.publisher.PublishRetained(fmt.Sprintf("harvester/%s/%s/%s", sh.cfg.Name, topic, node), string(validatorJson))
 			if err != nil {
 				return err
 			}

@@ -25,11 +25,19 @@ type Slash struct {
 	Type         string `json:"type"`
 }
 
-func (sh *SubstrateHarvester) ProcessSlashes(ctx context.Context, fn harvester.ErrorHandler) error {
-	return sh.processSlashes(ctx, fn, 5*time.Minute)
+func (sh *SubstrateHarvester) ProcessSlashes(ctx context.Context,
+	fn harvester.ErrorHandler,
+	pmc harvester.PerformanceMonitorClient,
+	topic string) error {
+	return sh.processSlashes(ctx, fn, pmc, topic, 5*time.Minute)
 }
 
-func (sh *SubstrateHarvester) processSlashes(ctx context.Context, fn harvester.ErrorHandler, d time.Duration) error {
+func (sh *SubstrateHarvester) processSlashes(ctx context.Context,
+	fn harvester.ErrorHandler,
+	pmc harvester.PerformanceMonitorClient,
+	topic string,
+	d time.Duration) error {
+
 	log.Debug("processing slashes")
 
 	ticker := time.NewTicker(d)
@@ -39,7 +47,7 @@ func (sh *SubstrateHarvester) processSlashes(ctx context.Context, fn harvester.E
 		var err error
 		select {
 		case <-ticker.C:
-			err = sh.getSlashes(fn)
+			err = sh.getSlashes(fn, pmc, topic)
 		case <-ctx.Done():
 			return ctx.Err()
 		}
@@ -49,7 +57,12 @@ func (sh *SubstrateHarvester) processSlashes(ctx context.Context, fn harvester.E
 	}
 }
 
-func (sh *SubstrateHarvester) getSlashes(fn harvester.ErrorHandler) error {
+func (sh *SubstrateHarvester) getSlashes(fn harvester.ErrorHandler,
+	pmc harvester.PerformanceMonitorClient,
+	topic string) error {
+
+	defer pmc.WriteProcessResponseMetrics(time.Now(), topic, fn)
+
 	activeEra, err := sh.GetActiveEra()
 	if err != nil {
 		return errors.Wrap(err, "error while fetching active era")
@@ -85,7 +98,7 @@ func (sh *SubstrateHarvester) getSlashes(fn harvester.ErrorHandler) error {
 				EraIndex:     activeEra,
 				SessionIndex: uint32(sessionIndex),
 				Type:         "validator",
-			})
+			}, topic)
 			if err != nil {
 				fn(err)
 			}
@@ -117,7 +130,7 @@ func (sh *SubstrateHarvester) getValidatorSlashInEra(era uint32, address string)
 	return &validatorSlashInEra, nil
 }
 
-func (sh *SubstrateHarvester) publishSlashEvent(slashEvent Slash) error {
+func (sh *SubstrateHarvester) publishSlashEvent(slashEvent Slash, topic string) error {
 	slashJson, err := json.Marshal(slashEvent)
 	if err != nil {
 		return err
@@ -125,7 +138,7 @@ func (sh *SubstrateHarvester) publishSlashEvent(slashEvent Slash) error {
 
 	account, era := slashEvent.AccountID, slashEvent.EraIndex
 	log.Logln(0, fmt.Sprintf("%s - Publishing slash event for account:%s in era %d", sh.cfg.Name, account, era))
-	err = sh.publisher.Publish(fmt.Sprintf("harvester/%s/slashes/%s", sh.cfg.Name, account), string(slashJson))
+	err = sh.publisher.Publish(fmt.Sprintf("harvester/%s/%s/%s", sh.cfg.Name, topic, account), string(slashJson))
 	if err != nil {
 		return err
 	}

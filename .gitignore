@@ -16,6 +16,9 @@
 
 bin/
 
+## docker grafana volumn
+grafana_conf
+
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 

@@ -21,7 +21,10 @@ type PendingExtrinsics struct {
 	Count int `json:"pendingExtrinsics"`
 }
 
-func (sh *SubstrateHarvester) ProcessPendingExtrinsics(ctx context.Context, fn harvester.ErrorHandler) error {
+func (sh *SubstrateHarvester) ProcessPendingExtrinsics(ctx context.Context,
+	fn harvester.ErrorHandler,
+	pmc harvester.PerformanceMonitorClient,
+	topic string) error {
 
 	ticker := time.NewTicker(3 * time.Second)
 
@@ -31,7 +34,7 @@ func (sh *SubstrateHarvester) ProcessPendingExtrinsics(ctx context.Context, fn h
 		var err error
 		select {
 		case <-ticker.C:
-			err = sh.publishPendingExtrinsics()
+			err = sh.publishPendingExtrinsics(fn, pmc, topic)
 		case <-ctx.Done():
 			return ctx.Err()
 		}
@@ -42,10 +45,12 @@ func (sh *SubstrateHarvester) ProcessPendingExtrinsics(ctx context.Context, fn h
 
 }
 
-func (sh *SubstrateHarvester) publishPendingExtrinsics() error {
+func (sh *SubstrateHarvester) publishPendingExtrinsics(fn harvester.ErrorHandler, pmc harvester.PerformanceMonitorClient, topic string) error {
+	defer pmc.WriteProcessResponseMetrics(time.Now(), topic, fn)
+
 	pendingExtrinsics, err := sh.api.RPC.Author.PendingExtrinsics()
 	if err != nil {
-		return errors.Wrapf(err, "error occurred while fetching rpc author pending extrinsics")
+		return errors.Wrap(err, "error occurred while fetching rpc author pending extrinsics")
 	}
 
 	extrinsicsCount := PendingExtrinsics{
@@ -58,9 +63,9 @@ func (sh *SubstrateHarvester) publishPendingExtrinsics() error {
 	}
 
 	log.Debugf("%s - Publishing ExtrinsicsPool update", sh.cfg.Name)
-	err = sh.publisher.Publish(fmt.Sprintf("harvester/%s/extrinsics-pool", sh.cfg.Name), string(msg))
+	err = sh.publisher.Publish(fmt.Sprintf("harvester/%s/%s", sh.cfg.Name, topic), string(msg))
 	if err != nil {
-		return errors.Wrapf(err, "error occurred while publishing extrinsicsCount")
+		return errors.Wrap(err, "error occurred while publishing extrinsicsCount")
 	}
 	return nil
 }

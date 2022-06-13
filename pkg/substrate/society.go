@@ -11,7 +11,10 @@ import (
 	"github.com/vedhavyas/go-subkey"
 )
 
-func (sh *SubstrateHarvester) ProcessSocietyMembers(ctx context.Context, fn harvester.ErrorHandler) error {
+func (sh *SubstrateHarvester) ProcessSocietyMembers(ctx context.Context,
+	fn harvester.ErrorHandler,
+	pmc harvester.PerformanceMonitorClient,
+	topic string) error {
 
 	ticker := time.NewTicker(60 * time.Second)
 	defer ticker.Stop()
@@ -19,7 +22,7 @@ func (sh *SubstrateHarvester) ProcessSocietyMembers(ctx context.Context, fn harv
 		var err error
 		select {
 		case <-ticker.C:
-			err = sh.getSocietyMembers()
+			err = sh.getSocietyMembers(fn, pmc, topic)
 		case <-ctx.Done():
 			return ctx.Err()
 
@@ -30,7 +33,11 @@ func (sh *SubstrateHarvester) ProcessSocietyMembers(ctx context.Context, fn harv
 	}
 }
 
-func (sh *SubstrateHarvester) getSocietyMembers() error {
+func (sh *SubstrateHarvester) getSocietyMembers(fn harvester.ErrorHandler,
+	pmc harvester.PerformanceMonitorClient,
+	topic string) error {
+	defer pmc.WriteProcessResponseMetrics(time.Now(), topic, fn)
+
 	key, err := sh.GetStorageDataKey("Society", "Members")
 	if err != nil {
 		return err
@@ -57,7 +64,7 @@ func (sh *SubstrateHarvester) getSocietyMembers() error {
 		return err
 	}
 
-	err = sh.publisher.PublishRetained(fmt.Sprintf("harvester/%s/society-members", sh.cfg.Name), string(accountsJson))
+	err = sh.publisher.PublishRetained(fmt.Sprintf("harvester/%s/%s", sh.cfg.Name, topic), string(accountsJson))
 	if err != nil {
 		return err
 	}

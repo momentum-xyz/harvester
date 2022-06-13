@@ -36,7 +36,17 @@ func Start(cfg harvester.Config, fn harvester.ErrorHandler) (*run.Group, error) 
 	{
 		ctx, cancel := context.WithCancel(ctx)
 		g.Add(func() error {
-			return exchangerateprovider.Start(ctx, fn, *h.Cfg, h.Publisher)
+			return h.PerformanceMonitorClient.WriteSystemRuntimeMetrics(ctx, cfg, fn)
+		}, func(err error) {
+			fn(err)
+			cancel()
+		})
+	}
+
+	{
+		ctx, cancel := context.WithCancel(ctx)
+		g.Add(func() error {
+			return exchangerateprovider.Start(ctx, fn, *h.Cfg, h.Publisher, h.PerformanceMonitorClient)
 		}, func(err error) {
 			fn(err)
 			cleanup()
@@ -66,7 +76,7 @@ func Start(cfg harvester.Config, fn harvester.ErrorHandler) (*run.Group, error) 
 			chainHarvester := chainHarvester
 			ctx, cancel := context.WithCancel(ctx)
 			g.Add(func() error {
-				return chainHarvester.Start(ctx, fn)
+				return chainHarvester.Start(ctx, h.PerformanceMonitorClient, fn)
 			}, func(error) {
 				fn(err)
 				cleanup()

@@ -50,13 +50,13 @@ func TestPublishTokenPrice(t *testing.T) {
 			JSON(map[string]interface{}{"kusama": map[string]float64{"usd": float64(500)}})
 
 		provider, _ := getExchangeRateProvider(*h.Cfg)
-		err := publishTokenPrice(provider, h.Publisher, "test topic")
+		err := publishTokenPrice(func(err error) {}, provider, h.PerformanceMonitorClient, h.Publisher, "test topic")
 		assert.Nil(t, err)
 	})
 
 	t.Run("unsupported protocol scheme", func(t *testing.T) {
 		provider, _ := getExchangeRateProvider(cfg)
-		err := publishTokenPrice(provider, nil, "test topic")
+		err := publishTokenPrice(func(err error) {}, provider, nil, nil, "test topic")
 		assert.NotNil(t, err)
 		assert.Contains(t, err.Error(), "unsupported protocol scheme")
 	})
@@ -84,7 +84,7 @@ func TestStart(t *testing.T) {
 			ctx.Done()
 			cancel()
 		}()
-		err := Start(ctx, func(err error) {}, cfg, h.Publisher)
+		err := Start(ctx, func(err error) {}, cfg, h.Publisher, h.PerformanceMonitorClient)
 		assert.Equal(t, "context canceled", err.Error())
 	})
 
@@ -103,7 +103,7 @@ func TestStart(t *testing.T) {
 		}()
 		_cfg := cfg
 		_cfg.ExchangeRateProvider.DisableExchangeRateProvider = true
-		err := Start(ctx, func(err error) {}, _cfg, h.Publisher)
+		err := Start(ctx, func(err error) {}, _cfg, h.Publisher, h.PerformanceMonitorClient)
 		assert.Equal(t, "context canceled", err.Error())
 	})
 
@@ -122,7 +122,7 @@ func TestStart(t *testing.T) {
 		}()
 		_cfg := cfg
 		_cfg.ExchangeRateProvider.Active = "aaaa"
-		err := Start(ctx, func(err error) {}, _cfg, h.Publisher)
+		err := Start(ctx, func(err error) {}, _cfg, h.Publisher, h.PerformanceMonitorClient)
 		assert.Equal(t, err.Error(), ExchangeProviderNotSupported)
 	})
 }

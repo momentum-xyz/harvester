@@ -1,3 +1,4 @@
+
 version: "3"
 
 services:
@@ -29,3 +30,27 @@ services:
     ports:
       - 1883:1883
       - 9001:9001
+
+  influxdb:
+    image: influxdb:latest
+    container_name: influxdb
+    ports:
+      - '8086:8086'
+    volumes:
+      - ./influxdb_conf:/var/lib/influxdb:rw
+    expose:
+      - '8086'
+  
+    environment:
+      - INFLUXDB_DB=
+      - INFLUXDB_ADMIN_USER=
+      - INFLUXDB_ADMIN_PASSWORD=  
+  
+  grafana:
+    image: grafana/grafana-oss:latest
+    ports:
+      - 3000:3000
+    volumes:
+      - ./grafana_conf:/var/lib/grafana:rw  
+    depends_on:
+      - influxdb  
