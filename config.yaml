@@ -18,9 +18,7 @@ chains:
     rpc: "wss://kusama-rpc.polkadot.io"
     active_topics:
       [
-        
-    
-       "block-creation-event",
+        "block-creation-event",
         "block-finalized-event",
         "reward-event",
         "society-members",
@@ -28,8 +26,7 @@ chains:
         "validators",
         "session",
         "slashes",
-        "era"
-      
+        "era",
       ]
   - name: "westend"
     type: "substrate"
@@ -60,12 +57,11 @@ sentry:
   attachStacktrace: true
 influx_db:
   url: http://localhost:8086
-  org: 
-  bucket: 
-  token: 
+  org:
+  bucket:
+  token:
   batchSize: 5
   retryInterval: 2
   systemMetricsInterval: 10
-
 
 loglevel: debug

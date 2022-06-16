@@ -6,43 +6,67 @@ import (
 
 	"github.com/OdysseyMomentumExperience/harvester/pkg/harvester"
 	"github.com/OdysseyMomentumExperience/harvester/pkg/mqtt"
-	"github.com/OdysseyMomentumExperience/harvester/pkg/wire"
+	"github.com/OdysseyMomentumExperience/harvester/pkg/mysql"
+	performancemonitor "github.com/OdysseyMomentumExperience/harvester/pkg/performance_monitor"
+	"github.com/OdysseyMomentumExperience/harvester/pkg/publisher"
+	"github.com/OdysseyMomentumExperience/harvester/pkg/repository"
 	gsrpc "github.com/centrifuge/go-substrate-rpc-client/v4"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/stretchr/testify/assert"
 )
 
-var cfg = harvester.Config{
+var mockCfg = harvester.Config{
 	MQTT: mqtt.Config{
 		Host:     "localhost",
 		Port:     1883,
 		ClientId: "harvester",
 	},
+	MySQL: mysql.Config{
+		Database: "harvester",
+		Host:     "localhost",
+		Password: "",
+		Username: "root",
+		Port:     3306,
+	},
+	InfluxDB: harvester.InfluxDbConfig{
+		Url:                   "http://localhost:8086",
+		Org:                   "",
+		Bucket:                "",
+		Token:                 "",
+		BatchSize:             5,
+		RetryInterval:         2,
+		SystemMetricsInterval: 10,
+	},
 }
-var chainCfg = harvester.ChainConfig{
+var mockChainCfg = harvester.ChainConfig{
 	Name:         "harvester",
 	RPC:          "ws://localhost:9944",
 	ActiveTopics: []string{"block-creation-event"},
 }
 
-var h, _, _ = wire.NewHarvester(&cfg, func(err error) {})
-var sh, _ = NewHarvester(chainCfg, h.Publisher, h.Repository)
+var mockPmc, _ = performancemonitor.NewPerformanceMonitorClient(&mockCfg, func(err error) {})
+var mockDB, _, _ = mysql.NewDB(&mockCfg.MySQL)
+var mockRepository, _ = repository.NewRepository(mockDB, mockCfg.MySQL.Migrate)
+var mqttClient = mqtt.GetMQTTClient(&mockCfg.MQTT, func(err error) {})
+var mockPublisher, _ = publisher.NewPublisher(mqttClient)
+var mockHarvester, _ = harvester.NewHarvester(&mockCfg, mockRepository, mockPublisher, mockPmc)
+var mockSh, _ = NewHarvester(mockChainCfg, mockHarvester.Publisher, mockHarvester.Repository)
 
 func TestSubstrateHarvester(t *testing.T) {
 	t.Run("NewHarvester()", func(t *testing.T) {
-		_sh, err := NewHarvester(chainCfg, h.Publisher, h.Repository)
+		_mockSh, err := NewHarvester(mockChainCfg, mockHarvester.Publisher, mockHarvester.Repository)
 		assert.Nil(t, err)
-		assert.IsType(t, _sh, &SubstrateHarvester{})
+		assert.IsType(t, _mockSh, &SubstrateHarvester{})
 
-		_chainCfg := chainCfg
-		_chainCfg.RPC = "ws://example.com"
-		_sh, err = NewHarvester(_chainCfg, h.Publisher, h.Repository)
+		_mockChainCfg := mockChainCfg
+		_mockChainCfg.RPC = "ws://example.com"
+		_mockSh, err = NewHarvester(_mockChainCfg, mockHarvester.Publisher, mockHarvester.Repository)
 		assert.NotNil(t, err)
-		assert.Nil(t, _sh)
+		assert.Nil(t, _mockSh)
 	})
 
 	t.Run("getApi()", func(t *testing.T) {
-		api, err := getApi(chainCfg.RPC)
+		api, err := getApi(mockChainCfg.RPC)
 		assert.Nil(t, err)
 		assert.IsType(t, api, &gsrpc.SubstrateAPI{})
 
@@ -52,7 +76,7 @@ func TestSubstrateHarvester(t *testing.T) {
 	})
 
 	t.Run("getMetadata()", func(t *testing.T) {
-		api, err := getApi(chainCfg.RPC)
+		api, err := getApi(mockChainCfg.RPC)
 		assert.Nil(t, err)
 		assert.IsType(t, api, &gsrpc.SubstrateAPI{})
 
@@ -68,21 +92,21 @@ func TestSubstrateHarvester(t *testing.T) {
 	})
 
 	t.Run("getActiveProcesses()", func(t *testing.T) {
-		processes := sh.getActiveProcesses()
+		processes := mockSh.getActiveProcesses()
 		assert.Equal(t, len(processes), 1)
-		assert.Equal(t, reflect.ValueOf(processes[0]).Pointer(), reflect.ValueOf(sh.ProcessNewHeader).Pointer())
+		assert.Equal(t, processes[0].Topic, "block-creation-event")
+		assert.Equal(t, reflect.ValueOf(processes[0].Process).Pointer(), reflect.ValueOf(mockSh.ProcessNewHeader).Pointer())
 	})
 
 	t.Run("topicProcessorStore()", func(t *testing.T) {
-		process := sh.topicProcessorStore()("block-creation-event")
-		assert.Equal(t, reflect.ValueOf(process).Pointer(), reflect.ValueOf(sh.ProcessNewHeader).Pointer())
+		process := mockSh.topicProcessorStore()("block-creation-event")
+		assert.Equal(t, reflect.ValueOf(process).Pointer(), reflect.ValueOf(mockSh.ProcessNewHeader).Pointer())
 
-		process = sh.topicProcessorStore()("aaaaa")
+		process = mockSh.topicProcessorStore()("aaaaa")
 		assert.Nil(t, process)
 	})
 
 	t.Run("Stop()", func(t *testing.T) {
-		sh.Stop()
+		mockSh.Stop()
 	})
-
 }
