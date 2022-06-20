@@ -44,9 +44,7 @@ func (sh *SubstrateHarvester) GetKeysLatest(key types.StorageKey) ([]types.Stora
 
 func (sh *SubstrateHarvester) GetStorageAtBlockHash(key types.StorageKey, hash types.Hash, target interface{}) error {
 	ok, err := sh.api.RPC.State.GetStorage(key, target, hash)
-	if err != nil {
-		return err
-	} else if !ok {
+	if err != nil || !ok {
 		return err
 	}
 
