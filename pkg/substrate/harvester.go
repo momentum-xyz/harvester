@@ -79,6 +79,7 @@ func (sh *SubstrateHarvester) topicProcessorStore() func(string) harvester.Activ
 		"extrinsics-pool":       sh.ProcessPendingExtrinsics,
 		"validators":            sh.ProcessValidators,
 		"session":               sh.ProcessChainSessionState,
+		"slashes":               sh.ProcessSlashes,
 	}
 
 	return func(topic string) harvester.ActiveHarvesterProcess {
