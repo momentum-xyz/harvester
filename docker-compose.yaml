@@ -2,22 +2,24 @@
 version: "3"
 
 services:
-  adminer:
-    image: adminer
+  phpmyadmin:
+    image: phpmyadmin
     restart: always
     ports:
-      - 9003:8080
+      - 9003:80
   db:
     image: mysql:5.7
     platform: linux/x86_64
     command: --default-authentication-plugin=mysql_native_password
     restart: unless-stopped
     environment:
-      MYSQL_ALLOW_EMPTY_PASSWORD: "true"
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
+      MYSQL_DATABASE: 'harvester'     
     volumes:
       - "./scripts/mysql/:/docker-entrypoint-initdb.d"
     ports:
       - 3306:3306
+    
   mosquitto:
     hostname: mosquitto
     image: eclipse-mosquitto:latest
@@ -28,3 +30,27 @@ services:
     ports:
       - 1883:1883
       - 9001:9001
+
+  influxdb:
+    image: influxdb:latest
+    container_name: influxdb
+    ports:
+      - '8086:8086'
+    volumes:
+      - ./influxdb_conf:/var/lib/influxdb:rw
+    expose:
+      - '8086'
+  
+    environment:
+      - INFLUXDB_DB=
+      - INFLUXDB_ADMIN_USER=
+      - INFLUXDB_ADMIN_PASSWORD=  
+  
+  grafana:
+    image: grafana/grafana-oss:latest
+    ports:
+      - 3000:3000
+    volumes:
+      - ./grafana_conf:/var/lib/grafana:rw  
+    depends_on:
+      - influxdb  

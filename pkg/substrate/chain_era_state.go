@@ -85,7 +85,7 @@ func (sh *SubstrateHarvester) GetErasValidatorReward(era uint32) (types.U128, er
 	var erasValidatorReward types.U128
 	err = sh.GetStorageLatest(erasValidatorRewardKey, &erasValidatorReward)
 
-	if err != nil {
+	if err != nil || erasValidatorReward.Int == nil {
 		return zeroReward, err
 	}
 

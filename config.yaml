@@ -1,5 +1,5 @@
 mysql:
-  database: "harvester_dev"
+  database: "harvester"
   url: "localhost"
   port: 3306
   username: "root"
@@ -16,7 +16,17 @@ chains:
   - name: "kusama"
     type: "substrate"
     rpc: "wss://kusama-rpc.polkadot.io"
-    active_topics: ["block-creation-event","block-finalized-event","reward-event","society-members","extrinsics-pool"]
+    active_topics:
+      [
+        "block-creation-event",
+        "block-finalized-event",
+        "reward-event",
+        "society-members",
+        "extrinsics-pool",
+        "validators",
+        "session",
+        "slashes",
+      ]
   - name: "westend"
     type: "substrate"
     rpc: "wss://westend-rpc.polkadot.io"
@@ -39,10 +49,19 @@ exchange_rate_provider:
     polkadotUSD: dot_usd
 
 sentry:
-  dsn:
+  dsn: 
   env:
-  release: harvester@1.0.0
+  release: harvester@1.0.1
   debugEnable: true
   attachStacktrace: true
+influx_db:
+  url: http://localhost:8086
+  org: 
+  bucket: 
+  token: 
+  batchSize: 5
+  retryInterval: 2
+  systemMetricsInterval: 10
+
 
 loglevel: debug

@@ -10,6 +10,7 @@ import (
 	"github.com/OdysseyMomentumExperience/harvester/ent/migrate"
 
 	"github.com/OdysseyMomentumExperience/harvester/ent/block"
+	"github.com/OdysseyMomentumExperience/harvester/ent/validator"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
@@ -22,6 +23,8 @@ type Client struct {
 	Schema *migrate.Schema
 	// Block is the client for interacting with the Block builders.
 	Block *BlockClient
+	// Validator is the client for interacting with the Validator builders.
+	Validator *ValidatorClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -36,6 +39,7 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Block = NewBlockClient(c.config)
+	c.Validator = NewValidatorClient(c.config)
 }
 
 // Open opens a database/sql.DB specified by the driver name and
@@ -67,9 +71,10 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		Block:  NewBlockClient(cfg),
+		ctx:       ctx,
+		config:    cfg,
+		Block:     NewBlockClient(cfg),
+		Validator: NewValidatorClient(cfg),
 	}, nil
 }
 
@@ -87,9 +92,10 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		Block:  NewBlockClient(cfg),
+		ctx:       ctx,
+		config:    cfg,
+		Block:     NewBlockClient(cfg),
+		Validator: NewValidatorClient(cfg),
 	}, nil
 }
 
@@ -120,6 +126,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.Block.Use(hooks...)
+	c.Validator.Use(hooks...)
 }
 
 // BlockClient is a client for the Block schema.
@@ -210,4 +217,94 @@ func (c *BlockClient) GetX(ctx context.Context, id int) *Block {
 // Hooks returns the client hooks.
 func (c *BlockClient) Hooks() []Hook {
 	return c.hooks.Block
+}
+
+// ValidatorClient is a client for the Validator schema.
+type ValidatorClient struct {
+	config
+}
+
+// NewValidatorClient returns a client for the Validator from the given config.
+func NewValidatorClient(c config) *ValidatorClient {
+	return &ValidatorClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `validator.Hooks(f(g(h())))`.
+func (c *ValidatorClient) Use(hooks ...Hook) {
+	c.hooks.Validator = append(c.hooks.Validator, hooks...)
+}
+
+// Create returns a create builder for Validator.
+func (c *ValidatorClient) Create() *ValidatorCreate {
+	mutation := newValidatorMutation(c.config, OpCreate)
+	return &ValidatorCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Validator entities.
+func (c *ValidatorClient) CreateBulk(builders ...*ValidatorCreate) *ValidatorCreateBulk {
+	return &ValidatorCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Validator.
+func (c *ValidatorClient) Update() *ValidatorUpdate {
+	mutation := newValidatorMutation(c.config, OpUpdate)
+	return &ValidatorUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ValidatorClient) UpdateOne(v *Validator) *ValidatorUpdateOne {
+	mutation := newValidatorMutation(c.config, OpUpdateOne, withValidator(v))
+	return &ValidatorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ValidatorClient) UpdateOneID(id int) *ValidatorUpdateOne {
+	mutation := newValidatorMutation(c.config, OpUpdateOne, withValidatorID(id))
+	return &ValidatorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Validator.
+func (c *ValidatorClient) Delete() *ValidatorDelete {
+	mutation := newValidatorMutation(c.config, OpDelete)
+	return &ValidatorDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *ValidatorClient) DeleteOne(v *Validator) *ValidatorDeleteOne {
+	return c.DeleteOneID(v.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *ValidatorClient) DeleteOneID(id int) *ValidatorDeleteOne {
+	builder := c.Delete().Where(validator.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ValidatorDeleteOne{builder}
+}
+
+// Query returns a query builder for Validator.
+func (c *ValidatorClient) Query() *ValidatorQuery {
+	return &ValidatorQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Validator entity by its id.
+func (c *ValidatorClient) Get(ctx context.Context, id int) (*Validator, error) {
+	return c.Query().Where(validator.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ValidatorClient) GetX(ctx context.Context, id int) *Validator {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ValidatorClient) Hooks() []Hook {
+	return c.hooks.Validator
 }

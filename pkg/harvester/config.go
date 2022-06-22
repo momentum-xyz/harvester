@@ -33,7 +33,8 @@ type Config struct {
 	Chains               []ChainConfig              `yaml:"chains"`
 	EnabledChains        []string                   `yaml:"enabled_chains" envconfig:"ENABLED_CHAINS"`
 	ExchangeRateProvider ExchangeRateProviderConfig `yaml:"exchange_rate_provider"`
-	Sentry               sentry.Config              `yaml:"sentry"`
+	Sentry               sentry.Config              `yaml:"sentry" envconfig:"SENTRY"`
+	InfluxDB             InfluxDbConfig             `yaml:"influx_db" envconfig:"INFLUX_DB"`
 }
 
 func (x *Config) Init() {

@@ -19,4 +19,3 @@ COPY --from=build /src/harvester /srv/harvester
 COPY --from=build /src/config.yaml /srv/config.yaml
 
 CMD ["/srv/harvester"]
-

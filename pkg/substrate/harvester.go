@@ -57,11 +57,19 @@ func getNetworkID(name string) uint8 {
 	}
 }
 
-func (sh *SubstrateHarvester) getActiveProcesses() []harvester.ActiveHarvesterProcess {
+func (sh *SubstrateHarvester) getActiveProcesses() []harvester.TopicProcess {
+	var substrateProcesses []harvester.TopicProcess
 
-	var substrateProcesses []harvester.ActiveHarvesterProcess
 	for _, activeProcess := range sh.cfg.ActiveTopics {
-		substrateProcesses = append(substrateProcesses, sh.topicProcessorStore()(activeProcess))
+		ap := sh.topicProcessorStore()(activeProcess)
+		if ap != nil {
+			topicProcess := harvester.TopicProcess{
+				Topic:   activeProcess,
+				Process: sh.topicProcessorStore()(activeProcess),
+			}
+
+			substrateProcesses = append(substrateProcesses, topicProcess)
+		}
 	}
 	return substrateProcesses
 }
@@ -74,6 +82,9 @@ func (sh *SubstrateHarvester) topicProcessorStore() func(string) harvester.Activ
 		"reward-event":          sh.ProcessErasRewardPoints,
 		"society-members":       sh.ProcessSocietyMembers,
 		"extrinsics-pool":       sh.ProcessPendingExtrinsics,
+		"validators":            sh.ProcessValidators,
+		"session":               sh.ProcessChainSessionState,
+		"slashes":               sh.ProcessSlashes,
 	}
 
 	return func(topic string) harvester.ActiveHarvesterProcess {
