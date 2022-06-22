@@ -28,7 +28,10 @@ type EraRewardPoints struct {
 	}
 }
 
-func (sh *SubstrateHarvester) ProcessErasRewardPoints(ctx context.Context, fn harvester.ErrorHandler) error {
+func (sh *SubstrateHarvester) ProcessErasRewardPoints(ctx context.Context,
+	fn harvester.ErrorHandler,
+	pmc harvester.PerformanceMonitorClient,
+	topic string) error {
 
 	ticker := time.NewTicker(60 * time.Second)
 
@@ -38,7 +41,7 @@ func (sh *SubstrateHarvester) ProcessErasRewardPoints(ctx context.Context, fn ha
 		var err error
 		select {
 		case <-ticker.C:
-			sh.publishErasRewardPoints()
+			sh.publishErasRewardPoints(fn, pmc, topic)
 		case <-ctx.Done():
 			return ctx.Err()
 		}
@@ -49,7 +52,11 @@ func (sh *SubstrateHarvester) ProcessErasRewardPoints(ctx context.Context, fn ha
 
 }
 
-func (sh *SubstrateHarvester) publishErasRewardPoints() error {
+func (sh *SubstrateHarvester) publishErasRewardPoints(fn harvester.ErrorHandler,
+	pmc harvester.PerformanceMonitorClient,
+	topic string) error {
+	defer pmc.WriteProcessResponseMetrics(time.Now(), topic, fn)
+
 	activeEra, err := sh.GetActiveEra()
 	if err != nil {
 		return errors.Wrap(err, "error while fetching active era")
@@ -86,7 +93,7 @@ func (sh *SubstrateHarvester) publishErasRewardPoints() error {
 	}
 
 	log.Logln(0, fmt.Sprintf("%s - Publishing reward event for era %d", sh.cfg.Name, activeEra))
-	err = sh.publisher.Publish(fmt.Sprintf("harvester/%s/reward-event", sh.cfg.Name), string(rewardsJson))
+	err = sh.publisher.Publish(fmt.Sprintf("harvester/%s/%s", sh.cfg.Name, topic), string(rewardsJson))
 	if err != nil {
 		return err
 	}

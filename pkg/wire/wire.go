@@ -4,6 +4,7 @@ import (
 	"github.com/OdysseyMomentumExperience/harvester/pkg/harvester"
 	"github.com/OdysseyMomentumExperience/harvester/pkg/mqtt"
 	"github.com/OdysseyMomentumExperience/harvester/pkg/mysql"
+	performancemonitor "github.com/OdysseyMomentumExperience/harvester/pkg/performance_monitor"
 	"github.com/OdysseyMomentumExperience/harvester/pkg/publisher"
 	"github.com/OdysseyMomentumExperience/harvester/pkg/repository"
 )
@@ -26,7 +27,12 @@ func NewHarvester(cfg *harvester.Config, fn harvester.ErrorHandler) (*harvester.
 		return nil, nil, err
 	}
 
-	harvester, err := harvester.NewHarvester(cfg, repository, publisher)
+	pmc, err := performancemonitor.NewPerformanceMonitorClient(cfg,fn)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	harvester, err := harvester.NewHarvester(cfg, repository, publisher, pmc)
 	if err != nil {
 		cleanupDB()
 		return nil, nil, err

@@ -1,6 +1,6 @@
 module github.com/OdysseyMomentumExperience/harvester
 
-go 1.17
+go 1.18
 
 require (
 	ariga.io/atlas v0.3.8-0.20220505085539-5ec35b058386
@@ -11,6 +11,7 @@ require (
 	github.com/eclipse/paho.mqtt.golang v1.3.5
 	github.com/getsentry/sentry-go v0.13.0
 	github.com/go-sql-driver/mysql v1.6.0
+	github.com/influxdata/influxdb-client-go/v2 v2.9.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/oklog/run v1.1.0
 	github.com/ory/x v0.0.367
@@ -30,6 +31,7 @@ require (
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
 	github.com/deckarep/golang-set v1.8.0 // indirect
 	github.com/decred/dcrd/crypto/blake256 v1.0.0 // indirect
+	github.com/deepmap/oapi-codegen v1.8.2 // indirect
 	github.com/ethereum/go-ethereum v1.10.17 // indirect
 	github.com/go-openapi/inflect v0.19.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
@@ -40,16 +42,12 @@ require (
 	github.com/gtank/ristretto255 v0.1.2 // indirect
 	github.com/h2non/parth v0.0.0-20190131123155-b4df798d6542 // indirect
 	github.com/hashicorp/hcl/v2 v2.10.0 // indirect
-	github.com/inconshreveable/mousetrap v1.0.0 // indirect
-	github.com/mattn/go-runewidth v0.0.9 // indirect
+	github.com/influxdata/line-protocol v0.0.0-20210311194329-9aa0e372d097 // indirect
 	github.com/mimoo/StrobeGo v0.0.0-20210601165009-122bf33a46e0 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
-	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/pierrec/xxHash v0.1.5 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rs/cors v1.8.2 // indirect
-	github.com/spf13/cobra v1.4.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/zclconf/go-cty v1.8.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/goleak v1.1.12 // indirect
@@ -62,4 +60,5 @@ require (
 	golang.org/x/tools v0.1.9-0.20211216111533-8d383106f7e7 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

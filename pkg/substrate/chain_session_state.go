@@ -30,8 +30,10 @@ type ChainSessionState struct {
 	CurrentSlotInEra       types.U32 `json:"currentSlotInEra"`
 }
 
-func (sh *SubstrateHarvester) ProcessChainSessionState(ctx context.Context, fn harvester.ErrorHandler) error {
-
+func (sh *SubstrateHarvester) ProcessChainSessionState(ctx context.Context,
+	fn harvester.ErrorHandler,
+	pmc harvester.PerformanceMonitorClient,
+	topic string) error {
 	ticker := time.NewTicker(2 * time.Second)
 
 	defer ticker.Stop()
@@ -40,7 +42,7 @@ func (sh *SubstrateHarvester) ProcessChainSessionState(ctx context.Context, fn h
 		var err error
 		select {
 		case <-ticker.C:
-			err = sh.publishChainSessionState()
+			err = sh.publishChainSessionState(fn, pmc, topic)
 		case <-ctx.Done():
 			return ctx.Err()
 		}
@@ -50,7 +52,12 @@ func (sh *SubstrateHarvester) ProcessChainSessionState(ctx context.Context, fn h
 	}
 }
 
-func (sh *SubstrateHarvester) publishChainSessionState() error {
+func (sh *SubstrateHarvester) publishChainSessionState(fn harvester.ErrorHandler,
+	pmc harvester.PerformanceMonitorClient,
+	topic string) error {
+
+	defer pmc.WriteProcessResponseMetrics(time.Now(), topic, fn)
+
 	currentSessionIndexKey, err := sh.GetStorageDataKey("Session", "CurrentIndex")
 	if err != nil {
 		return errors.Wrap(err, " error while creating session current index storage data key")
@@ -143,7 +150,7 @@ func (sh *SubstrateHarvester) publishChainSessionState() error {
 		return err
 	}
 
-	err = sh.publisher.Publish(fmt.Sprintf("harvester/%s/session", sh.cfg.Name), string(sessionStateJson))
+	err = sh.publisher.Publish(fmt.Sprintf("harvester/%s/%s", sh.cfg.Name, topic), string(sessionStateJson))
 
 	if err != nil {
 		return err
@@ -228,7 +235,7 @@ func (sh *SubstrateHarvester) currentSlotInEra(sessionProgress types.U64) (types
 	if err != nil {
 		return 0, err
 	}
-	log.Debugf(" current slot in era calucaltion sessionLength  %v, sessionProgress %v ", sessionLength, sessionProgress)
+	log.Debugf(" current slot in era calculation sessionLength  %v, sessionProgress %v ", sessionLength, sessionProgress)
 
 	eraProgress := (currentIndex-activeEraStartSessionIndex)*types.U32(sessionLength) + types.U32(sessionProgress)
 

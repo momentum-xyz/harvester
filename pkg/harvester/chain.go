@@ -6,7 +6,7 @@ import (
 
 // Chain harvesters should implement this interface
 type ChainHarvester interface {
-	Start(ctx context.Context, fn ErrorHandler) error
+	Start(ctx context.Context, pmc PerformanceMonitorClient, fn ErrorHandler) error
 	Stop()
 }
 

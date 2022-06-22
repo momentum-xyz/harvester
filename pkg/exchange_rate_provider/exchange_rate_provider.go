@@ -12,7 +12,11 @@ import (
 	"github.com/OdysseyMomentumExperience/harvester/pkg/log"
 )
 
-func Start(ctx context.Context, fn harvester.ErrorHandler, cfg harvester.Config, publisher harvester.Publisher) error {
+func Start(ctx context.Context,
+	fn harvester.ErrorHandler,
+	cfg harvester.Config,
+	publisher harvester.Publisher,
+	pmc harvester.PerformanceMonitorClient) error {
 
 	if cfg.ExchangeRateProvider.DisableExchangeRateProvider {
 		<-ctx.Done()
@@ -39,7 +43,7 @@ func Start(ctx context.Context, fn harvester.ErrorHandler, cfg harvester.Config,
 			return ctx.Err()
 
 		case <-ticker.C:
-			err = publishTokenPrice(provider, publisher, ksmTopic)
+			err = publishTokenPrice(fn, provider, pmc, publisher, ksmTopic)
 		}
 		//TODO filter error types and handle individual errors
 		if err != nil {
@@ -49,8 +53,15 @@ func Start(ctx context.Context, fn harvester.ErrorHandler, cfg harvester.Config,
 	}
 }
 
-func publishTokenPrice(provider harvester.ExchangeRateProvider, publisher harvester.Publisher, ksmTopic string) error {
+func publishTokenPrice(fn harvester.ErrorHandler,
+	provider harvester.ExchangeRateProvider,
+	pmc harvester.PerformanceMonitorClient,
+	publisher harvester.Publisher,
+	ksmTopic string) error {
+
+	defer pmc.WriteProcessResponseMetrics(time.Now(), ksmTopic, fn)
 	var err error
+
 	price, err := provider.FetchKusamaTokenExchangeRate()
 	if err != nil {
 		return err
@@ -66,6 +77,7 @@ func publishTokenPrice(provider harvester.ExchangeRateProvider, publisher harves
 	if err != nil {
 		return err
 	}
+
 	return err
 }
 

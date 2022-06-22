@@ -27,9 +27,12 @@ type RawBabePreDigestCompat struct {
 	AsThree types.U32
 }
 
-func (sh *SubstrateHarvester) ProcessNewHeader(ctx context.Context, fn harvester.ErrorHandler) error {
+func (sh *SubstrateHarvester) ProcessNewHeader(ctx context.Context,
+	fn harvester.ErrorHandler,
+	pmc harvester.PerformanceMonitorClient,
+	topic string) error {
 
-	log.Debug("proccesing new headers")
+	log.Debug("processing new headers")
 
 	ticker := time.NewTicker(2 * time.Second)
 
@@ -41,7 +44,7 @@ func (sh *SubstrateHarvester) ProcessNewHeader(ctx context.Context, fn harvester
 		var err error
 		select {
 		case <-ticker.C:
-			latestNewHead, err = sh.fetchNewHead(latestNewHead)
+			latestNewHead, err = sh.fetchNewHead(fn, pmc, latestNewHead, topic)
 		case <-ctx.Done():
 			return ctx.Err()
 		}
@@ -51,7 +54,11 @@ func (sh *SubstrateHarvester) ProcessNewHeader(ctx context.Context, fn harvester
 	}
 }
 
-func (sh *SubstrateHarvester) ProcessFinalizedHeader(ctx context.Context, fn harvester.ErrorHandler) error {
+func (sh *SubstrateHarvester) ProcessFinalizedHeader(ctx context.Context,
+	fn harvester.ErrorHandler,
+	pmc harvester.PerformanceMonitorClient,
+	topic string) error {
+
 	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()
 
@@ -61,7 +68,7 @@ func (sh *SubstrateHarvester) ProcessFinalizedHeader(ctx context.Context, fn har
 		var err error
 		select {
 		case <-ticker.C:
-			latestFinalizedHead, err = sh.fetchFinalizedHead(latestFinalizedHead)
+			latestFinalizedHead, err = sh.fetchFinalizedHead(fn, pmc, latestFinalizedHead, topic)
 
 		case <-ctx.Done():
 			return ctx.Err()
@@ -72,32 +79,38 @@ func (sh *SubstrateHarvester) ProcessFinalizedHeader(ctx context.Context, fn har
 	}
 }
 
-func (sh *SubstrateHarvester) fetchNewHead(latestHead types.U32) (types.U32, error) {
+func (sh *SubstrateHarvester) fetchNewHead(fn harvester.ErrorHandler,
+	pmc harvester.PerformanceMonitorClient,
+	latestHead types.U32,
+	topic string) (types.U32, error) {
 
-	var nextNewdHead types.U32
-
+	var nextNewHead types.U32
+	defer pmc.WriteProcessResponseMetrics(time.Now(), topic, fn)
 	newHead, err := sh.api.RPC.Chain.GetHeaderLatest()
 	if err != nil {
 		return latestHead, errors.Wrapf(err, " error while fetching latest header, previous block is %v", latestHead)
 	}
 
-	nextNewdHead = types.U32(newHead.Number)
-	if nextNewdHead == latestHead {
+	nextNewHead = types.U32(newHead.Number)
+	if nextNewHead == latestHead {
 		log.Debug("no new header, latest is :", latestHead)
 		return latestHead, nil
 	}
-	err = sh.processHeader(newHead, "block-creation-event", false)
+	err = sh.processHeader(newHead, topic, false)
 	if err != nil {
-		return latestHead, errors.Wrapf(err, " error while processing new head %v", nextNewdHead)
+		return latestHead, errors.Wrapf(err, " error while processing new head %v", nextNewHead)
 	}
 
-	return nextNewdHead, nil
+	return nextNewHead, nil
 }
 
-func (sh *SubstrateHarvester) fetchFinalizedHead(latestHead types.U32) (types.U32, error) {
+func (sh *SubstrateHarvester) fetchFinalizedHead(fn harvester.ErrorHandler,
+	pmc harvester.PerformanceMonitorClient,
+	latestHead types.U32,
+	topic string) (types.U32, error) {
 
 	var nextFinalizedHead types.U32
-
+	defer pmc.WriteProcessResponseMetrics(time.Now(), topic, fn)
 	finalizedHead, err := sh.api.RPC.Chain.GetFinalizedHead()
 	if err != nil {
 		return latestHead, errors.Wrapf(err, " error while fetching finalizedHead hash for block  %v", latestHead)
@@ -112,7 +125,7 @@ func (sh *SubstrateHarvester) fetchFinalizedHead(latestHead types.U32) (types.U3
 		log.Debug("no new finalized block latest is :", latestHead)
 		return latestHead, nil
 	}
-	err = sh.processHeader(finalizedHeader, "block-finalized-event", true)
+	err = sh.processHeader(finalizedHeader, topic, true)
 	if err != nil {
 		return latestHead, errors.Wrapf(err, " error while processing finalized head %v", nextFinalizedHead)
 	}

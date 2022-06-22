@@ -57,13 +57,18 @@ func getNetworkID(name string) uint8 {
 	}
 }
 
-func (sh *SubstrateHarvester) getActiveProcesses() []harvester.ActiveHarvesterProcess {
+func (sh *SubstrateHarvester) getActiveProcesses() []harvester.TopicProcess {
+	var substrateProcesses []harvester.TopicProcess
 
-	var substrateProcesses []harvester.ActiveHarvesterProcess
 	for _, activeProcess := range sh.cfg.ActiveTopics {
 		ap := sh.topicProcessorStore()(activeProcess)
 		if ap != nil {
-			substrateProcesses = append(substrateProcesses, sh.topicProcessorStore()(activeProcess))
+			topicProcess := harvester.TopicProcess{
+				Topic:   activeProcess,
+				Process: sh.topicProcessorStore()(activeProcess),
+			}
+
+			substrateProcesses = append(substrateProcesses, topicProcess)
 		}
 	}
 	return substrateProcesses

@@ -49,10 +49,19 @@ exchange_rate_provider:
     polkadotUSD: dot_usd
 
 sentry:
-  dsn:
+  dsn: 
   env:
-  release: harvester@1.0.0
+  release: harvester@1.0.1
   debugEnable: true
   attachStacktrace: true
+influx_db:
+  url: http://localhost:8086
+  org: 
+  bucket: 
+  token: 
+  batchSize: 5
+  retryInterval: 2
+  systemMetricsInterval: 10
+
 
 loglevel: debug

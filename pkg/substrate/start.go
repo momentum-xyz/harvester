@@ -8,7 +8,9 @@ import (
 	"github.com/oklog/run"
 )
 
-func (sh *SubstrateHarvester) Start(ctx context.Context, fn harvester.ErrorHandler) error {
+func (sh *SubstrateHarvester) Start(ctx context.Context,
+	pmc harvester.PerformanceMonitorClient,
+	fn harvester.ErrorHandler) error {
 	log.Infof("starting chain harvester %s\n", sh.cfg.Name)
 
 	// Start substrate process
@@ -20,7 +22,7 @@ func (sh *SubstrateHarvester) Start(ctx context.Context, fn harvester.ErrorHandl
 			substrateProcess := substrateProcess
 			ctx, cancel := context.WithCancel(ctx)
 			g.Add(func() error {
-				return substrateProcess(ctx, fn)
+				return substrateProcess.Process(ctx, fn, pmc, substrateProcess.Topic)
 			}, func(error) {
 				cancel()
 			})
