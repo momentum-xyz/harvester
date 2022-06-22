@@ -70,7 +70,6 @@ func (sh *SubstrateHarvester) getActiveProcesses() []harvester.ActiveHarvesterPr
 }
 
 func (sh *SubstrateHarvester) topicProcessorStore() func(string) harvester.ActiveHarvesterProcess {
-
 	innerProcessStore := map[string]harvester.ActiveHarvesterProcess{
 		"block-creation-event":  sh.ProcessNewHeader,
 		"block-finalized-event": sh.ProcessFinalizedHeader,

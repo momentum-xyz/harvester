@@ -14,6 +14,7 @@ type ChainEraState struct {
 	Name                  string     `json:"name"`
 	ActiveEra             uint32     `json:"activeEra"`
 	ActiveValidators      uint32     `json:"activeValidators"`
+	ActiveNominators      uint32     `json:"activeNominators"`
 	CandidateValidators   uint32     `json:"candidateValidators"`
 	TotalStakeInActiveEra types.U128 `json:"totalStakeInActiveEra"`
 	TotalStakeInLastEra   types.U128 `json:"totalStakeInLastEra"`
