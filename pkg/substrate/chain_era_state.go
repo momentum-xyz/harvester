@@ -17,6 +17,7 @@ type ChainEraState struct {
 	Name                  string     `json:"name"`
 	ActiveEra             uint32     `json:"activeEra"`
 	ActiveValidators      int        `json:"activeValidators"`
+	ActiveNominators      int        `json:"activeNominators"`
 	CandidateValidators   uint32     `json:"candidateValidators"`
 	TotalStakeInActiveEra types.U128 `json:"totalStakeInActiveEra"`
 	TotalStakeInLastEra   types.U128 `json:"totalStakeInLastEra"`
@@ -72,13 +73,17 @@ func (sh *SubstrateHarvester) publishEraInfo(fn harvester.ErrorHandler,
 
 	reward, err := sh.GetErasValidatorReward(activeEra - 1)
 	if err != nil {
-
 		return err
 	}
 
 	activeValidators, err := sh.getCurrentSessionValidators()
 	if err != nil {
-		return err
+		return errors.Wrap(err, " error while fetching activeValidators")
+	}
+
+	activeNominators, err := sh.getActiveNominators(fn)
+	if err != nil {
+		return errors.Wrap(err, " error while fetching activeNominators")
 	}
 
 	stakingRatio, err := sh.getStakingRatio(activeEra)
@@ -90,6 +95,7 @@ func (sh *SubstrateHarvester) publishEraInfo(fn harvester.ErrorHandler,
 		Name:                  sh.cfg.Name,
 		ActiveEra:             activeEra,
 		ActiveValidators:      len(activeValidators),
+		ActiveNominators:      len(activeNominators),
 		TotalStakeInActiveEra: totalStakeInActiveEra,
 		TotalStakeInLastEra:   totalStakeInLastEra,
 		LastEraReward:         reward,

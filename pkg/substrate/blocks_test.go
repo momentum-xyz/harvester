@@ -103,7 +103,7 @@ func TestBlocks(t *testing.T) {
 
 		err := _mockSh.processHeader(newHead, topic, false)
 		activeValidators, _ := mockSh.getCurrentSessionValidators()
-		validatorID, _ := accountIdToString(activeValidators[0])
+		validatorID, _ := AccountIdToString(activeValidators[0])
 		assert.Equal(t, reflect.TypeOf(activeValidators), reflect.SliceOf(reflect.TypeOf(types.NewAccountID([]byte("")))))
 
 		errMsg := fmt.Errorf("publish header info for topic %v and validator %v is failed", topic, validatorID)
@@ -116,7 +116,7 @@ func TestBlocks(t *testing.T) {
 		assert.IsType(t, newHead, &types.Header{})
 
 		activeValidators, _ := mockSh.getCurrentSessionValidators()
-		validatorID, _ := accountIdToString(activeValidators[0])
+		validatorID, _ := AccountIdToString(activeValidators[0])
 		assert.Equal(t, reflect.TypeOf(activeValidators), reflect.SliceOf(reflect.TypeOf(types.NewAccountID([]byte("")))))
 
 		err := mockSh.publishHeader(newHead, 1, validatorID, "block-creation-event", false)
@@ -128,7 +128,7 @@ func TestBlocks(t *testing.T) {
 		assert.IsType(t, newHead, &types.Header{})
 
 		activeValidators, _ := mockSh.getCurrentSessionValidators()
-		validatorID, _ := accountIdToString(activeValidators[0])
+		validatorID, _ := AccountIdToString(activeValidators[0])
 		assert.Equal(t, reflect.TypeOf(activeValidators), reflect.SliceOf(reflect.TypeOf(types.NewAccountID([]byte("")))))
 
 		_mqttClient := mqtt.GetMQTTClient(&mqtt.Config{}, func(err error) {})
@@ -146,7 +146,7 @@ func TestBlocks(t *testing.T) {
 		assert.IsType(t, newHead, &types.Header{})
 
 		activeValidators, _ := mockSh.getCurrentSessionValidators()
-		validatorID, _ := accountIdToString(activeValidators[0])
+		validatorID, _ := AccountIdToString(activeValidators[0])
 		assert.Equal(t, reflect.TypeOf(activeValidators), reflect.SliceOf(reflect.TypeOf(types.NewAccountID([]byte("")))))
 
 		_mockDB, _, _ := mysql.NewDB(&mysql.Config{})
