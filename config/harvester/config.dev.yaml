@@ -16,7 +16,17 @@ chains:
   - name: "kusama"
     type: "substrate"
     rpc: "wss://kusama-rpc.polkadot.io"
-    active_topics: ["block-creation-event","block-finalized-event","reward-event","society-members","extrinsics-pool","validators","session"]
+    active_topics:
+      [
+        "block-creation-event",
+        "block-finalized-event",
+        "reward-event",
+        "society-members",
+        "extrinsics-pool",
+        "validators",
+        "session",
+        "slashes",
+      ]
   - name: "westend"
     type: "substrate"
     rpc: "wss://westend-rpc.polkadot.io"
@@ -39,7 +49,7 @@ exchange_rate_provider:
     polkadotUSD: dot_usd
 
 sentry:
-  dsn: 
+  dsn:
   env:
   release: harvester@1.0.0
   debugEnable: true
