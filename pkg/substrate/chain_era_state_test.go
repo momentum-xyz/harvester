@@ -10,11 +10,6 @@ import (
 )
 
 func TestChainEraState(t *testing.T) {
-	t.Run("GetChainEraState", func(t *testing.T) {
-		activeEra, _ := sh.GetActiveEra()
-		err := sh.GetChainEraState(activeEra, uint32(1), uint32(1), func(err error) {})
-		assert.Nil(t, err)
-	})
 
 	t.Run("GetErasValidatorReward", func(t *testing.T) {
 		activeEra, _ := sh.GetActiveEra()

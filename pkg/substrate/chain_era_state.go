@@ -1,52 +1,89 @@
 package substrate
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/OdysseyMomentumExperience/harvester/pkg/harvester"
 	"github.com/OdysseyMomentumExperience/harvester/pkg/log"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
+	"github.com/pkg/errors"
 )
 
 type ChainEraState struct {
 	Name                  string     `json:"name"`
 	ActiveEra             uint32     `json:"activeEra"`
-	ActiveValidators      uint32     `json:"activeValidators"`
+	ActiveValidators      int        `json:"activeValidators"`
 	CandidateValidators   uint32     `json:"candidateValidators"`
 	TotalStakeInActiveEra types.U128 `json:"totalStakeInActiveEra"`
 	TotalStakeInLastEra   types.U128 `json:"totalStakeInLastEra"`
 	LastEraReward         types.U128 `json:"lastEraReward"`
 }
 
-func (sh *SubstrateHarvester) GetChainEraState(activeEra uint32,
-	activeValidators uint32,
-	candidateValidators uint32,
-	fn harvester.ErrorHandler) error {
+func (sh *SubstrateHarvester) ProcessChainEraState(ctx context.Context,
+	fn harvester.ErrorHandler,
+	pmc harvester.PerformanceMonitorClient,
+	topic string) error {
+
+	ticker := time.NewTicker(5 * time.Minute)
+
+	defer ticker.Stop()
+
+	for {
+		var err error
+		select {
+		case <-ticker.C:
+			err = sh.publishEraInfo(fn, pmc, topic)
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+		if err != nil {
+			fn(err)
+		}
+	}
+
+}
+
+func (sh *SubstrateHarvester) publishEraInfo(fn harvester.ErrorHandler,
+	pmc harvester.PerformanceMonitorClient,
+	topic string) error {
+
+	defer pmc.WriteProcessResponseMetrics(time.Now(), topic, fn)
+
+	activeEra, err := sh.GetActiveEra()
+
+	if err != nil {
+		return errors.Wrap(err, " error while fetching active era")
+	}
 
 	totalStakeInActiveEra, err := sh.getEraTotalStake(activeEra)
 	if err != nil {
-		fn(err)
-		return err
+		return errors.Wrap(err, " error while fetching totalStakeInActiveEra")
 	}
 
 	totalStakeInLastEra, err := sh.getEraTotalStake(activeEra - 1)
 	if err != nil {
-		fn(err)
-		return err
+		return errors.Wrap(err, " error while fetching totalStakeInLastEra")
 	}
 
 	reward, err := sh.GetErasValidatorReward(activeEra - 1)
 	if err != nil {
-		fn(err)
+
 		return err
 	}
+
+	activeValidators, err := sh.getCurrentSessionValidators()
+	if err != nil {
+		return err
+	}
+
 	eraState := ChainEraState{
 		Name:                  sh.cfg.Name,
 		ActiveEra:             activeEra,
-		ActiveValidators:      activeValidators,
-		CandidateValidators:   candidateValidators,
+		ActiveValidators:      len(activeValidators),
 		TotalStakeInActiveEra: totalStakeInActiveEra,
 		TotalStakeInLastEra:   totalStakeInLastEra,
 		LastEraReward:         reward,
@@ -59,7 +96,7 @@ func (sh *SubstrateHarvester) GetChainEraState(activeEra uint32,
 		return err
 	}
 	log.Infof("%s - Publishing Chain Era State For Era %d", sh.cfg.Name, activeEra)
-	err = sh.publisher.Publish(fmt.Sprintf("harvester/%s/era", sh.cfg.Name), string(msg))
+	err = sh.publisher.Publish(fmt.Sprintf("harvester/%s/%s", sh.cfg.Name, topic), string(msg))
 	if err != nil {
 		fn(err)
 		return err
