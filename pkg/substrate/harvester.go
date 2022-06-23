@@ -85,6 +85,7 @@ func (sh *SubstrateHarvester) topicProcessorStore() func(string) harvester.Activ
 		"validators":            sh.ProcessValidators,
 		"session":               sh.ProcessChainSessionState,
 		"slashes":               sh.ProcessSlashes,
+		"era":                   sh.ProcessChainEraState,
 	}
 
 	return func(topic string) harvester.ActiveHarvesterProcess {

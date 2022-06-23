@@ -18,7 +18,9 @@ chains:
     rpc: "wss://kusama-rpc.polkadot.io"
     active_topics:
       [
-        "block-creation-event",
+        
+    
+       "block-creation-event",
         "block-finalized-event",
         "reward-event",
         "society-members",
@@ -26,6 +28,8 @@ chains:
         "validators",
         "session",
         "slashes",
+        "era"
+      
       ]
   - name: "westend"
     type: "substrate"
@@ -49,7 +53,7 @@ exchange_rate_provider:
     polkadotUSD: dot_usd
 
 sentry:
-  dsn: 
+  dsn:
   env:
   release: harvester@1.0.1
   debugEnable: true
