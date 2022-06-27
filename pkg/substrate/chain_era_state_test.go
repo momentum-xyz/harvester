@@ -25,4 +25,10 @@ func TestChainEraState(t *testing.T) {
 		assert.IsType(t, reflect.TypeOf(totalStakeInEra), reflect.TypeOf(types.NewU128(*big.NewInt(0))))
 	})
 
+	t.Run("getStakingRatio", func(t *testing.T) {
+		activeEra, _ := mockSh.GetActiveEra()
+		stakingRatio, err := mockSh.getStakingRatio(activeEra)
+		assert.Nil(t, err)
+		assert.IsType(t, reflect.TypeOf(stakingRatio), reflect.TypeOf(float32(0)))
+	})
 }

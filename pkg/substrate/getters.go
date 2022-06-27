@@ -137,3 +137,18 @@ func (sh *SubstrateHarvester) getCurrentSessionValidators() ([]types.AccountID, 
 
 	return validatorAccountIDs, nil
 }
+
+func (sh *SubstrateHarvester) GetTotalIssuance() (types.U128, error) {
+	var totalIssuance types.U128
+	key, err := sh.GetStorageDataKey("Balances", "TotalIssuance")
+	if err != nil {
+		return totalIssuance, err
+	}
+
+	err = sh.GetStorageLatest(key, &totalIssuance)
+	if err != nil {
+		return totalIssuance, err
+	}
+
+	return totalIssuance, nil
+}
