@@ -21,6 +21,7 @@ type ChainEraState struct {
 	TotalStakeInActiveEra types.U128 `json:"totalStakeInActiveEra"`
 	TotalStakeInLastEra   types.U128 `json:"totalStakeInLastEra"`
 	LastEraReward         types.U128 `json:"lastEraReward"`
+	StakingRatio          float32    `json:"stakingRatio"`
 }
 
 func (sh *SubstrateHarvester) ProcessChainEraState(ctx context.Context,
@@ -80,6 +81,11 @@ func (sh *SubstrateHarvester) publishEraInfo(fn harvester.ErrorHandler,
 		return err
 	}
 
+	stakingRatio, err := sh.getStakingRatio(activeEra)
+	if err != nil {
+		return err
+	}
+
 	eraState := ChainEraState{
 		Name:                  sh.cfg.Name,
 		ActiveEra:             activeEra,
@@ -87,6 +93,7 @@ func (sh *SubstrateHarvester) publishEraInfo(fn harvester.ErrorHandler,
 		TotalStakeInActiveEra: totalStakeInActiveEra,
 		TotalStakeInLastEra:   totalStakeInLastEra,
 		LastEraReward:         reward,
+		StakingRatio:          stakingRatio,
 	}
 
 	msg, err := json.Marshal(eraState)
@@ -151,4 +158,19 @@ func (sh *SubstrateHarvester) getEraTotalStake(era uint32) (types.U128, error) {
 	}
 
 	return totalStakeInEra, nil
+}
+
+func (sh *SubstrateHarvester) getStakingRatio(activeEra uint32) (float32, error) {
+	totalIssuance, err := sh.GetTotalIssuance()
+	if err != nil || totalIssuance.Int == nil {
+		return 0, err
+	}
+
+	totalStaked, err := sh.getEraTotalStake(activeEra)
+	if err != nil {
+		return 0, err
+	}
+
+	stakingRatio := (float64(totalStaked.Uint64()) * float64(100)) / float64(totalIssuance.Uint64())
+	return float32(stakingRatio), nil
 }

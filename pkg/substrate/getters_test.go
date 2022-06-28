@@ -1,6 +1,8 @@
 package substrate
 
 import (
+	"math/big"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -153,5 +155,12 @@ func TestGetters(t *testing.T) {
 		assert.Nil(t, err)
 		assert.IsType(t, &validatorAccountIDs[0], &types.AccountID{})
 		assert.Greater(t, len(validatorAccountIDs), 0)
+	})
+
+	t.Run("GetTotalIssuance()", func(t *testing.T) {
+		totalIssuance, err := mockSh.GetTotalIssuance()
+		assert.Nil(t, err)
+		assert.IsType(t, reflect.TypeOf(totalIssuance), reflect.TypeOf(types.NewU128(*big.NewInt(0))))
+		assert.Greater(t, totalIssuance.Uint64(), uint64(0))
 	})
 }
