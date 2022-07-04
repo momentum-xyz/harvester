@@ -60,6 +60,25 @@ func (sh *SubstrateHarvester) QueryStorage(keys []types.StorageKey, fromBlock ty
 	return changes, nil
 }
 
+func (sh *SubstrateHarvester) QueryStorageAt(keys []types.StorageKey) ([]types.KeyValueOption, error) {
+	hexKeys := make([]string, len(keys))
+	for i, key := range keys {
+		hexKeys[i] = key.Hex()
+	}
+
+	var res []types.StorageChangeSet
+	err := sh.api.Client.Call(&res, "state_queryStorageAt", hexKeys)
+	if err != nil {
+		return nil, err
+	}
+
+	var changes []types.KeyValueOption
+	for _, r := range res {
+		changes = append(changes, r.Changes...)
+	}
+	return changes, nil
+}
+
 func (sh *SubstrateHarvester) QueryConstant(prefix string, name string, res interface{}) error {
 	data, err := sh.metadata.FindConstantValue(prefix, name)
 	if err != nil {
@@ -118,8 +137,42 @@ func (sh *SubstrateHarvester) GetSessionIndex() (types.U32, error) {
 	return sessionId, nil
 }
 
-func (sh *SubstrateHarvester) CreateStorageKeyUnsafe(prefix string, method string) (types.StorageKey, error) {
-	return append(xxhash.New128([]byte(prefix)).Sum(nil), xxhash.New128([]byte(method)).Sum(nil)...), nil
+func (sh *SubstrateHarvester) CreateStorageKeyUnsafe(prefix string, method string, args ...[]byte) (types.StorageKey, error) {
+	key := append(xxhash.New128([]byte(prefix)).Sum(nil), xxhash.New128([]byte(method)).Sum(nil)...)
+
+	if len(args) > 0 {
+		entryMeta, err := sh.FindStorageEntryMetadata(prefix, method)
+		if err != nil {
+			return nil, err
+		}
+		hashers, err := entryMeta.Hashers()
+		if err != nil {
+			return nil, err
+		}
+
+		for i, arg := range args {
+			_, err := hashers[i].Write(arg)
+			if err != nil {
+				return nil, errors.Wrapf(err, "unable to hash args[%d]: %s Error: %v", i, arg, err)
+			}
+			key = append(key, hashers[i].Sum(nil)...)
+		}
+
+	}
+	return key, nil
+}
+
+func (sh *SubstrateHarvester) FindStorageEntryMetadata(prefix string, method string) (types.StorageEntryMetadata, error) {
+	meta, err := sh.api.RPC.State.GetMetadataLatest()
+	if err != nil {
+		return nil, err
+	}
+
+	entryMeta, err := meta.FindStorageEntryMetadata(prefix, method)
+	if err != nil {
+		return nil, err
+	}
+	return entryMeta, nil
 }
 
 func (sh *SubstrateHarvester) getCurrentSessionValidators() ([]types.AccountID, error) {

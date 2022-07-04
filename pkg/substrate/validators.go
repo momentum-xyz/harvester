@@ -3,7 +3,6 @@ package substrate
 import (
 	"context"
 	"crypto/md5"
-	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -13,8 +12,6 @@ import (
 
 	"github.com/OdysseyMomentumExperience/harvester/pkg/harvester"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
-	"github.com/decred/base58"
-	"github.com/vedhavyas/go-subkey"
 )
 
 func (sh *SubstrateHarvester) ProcessValidators(ctx context.Context,
@@ -62,7 +59,7 @@ func (sh *SubstrateHarvester) updateValidators(fn harvester.ErrorHandler,
 	}
 
 	for _, node := range stashAccounts {
-		validatorNode, err := stringToAccountId(node)
+		validatorNode, err := StringToAccountId(node)
 		if err != nil {
 			return err
 		}
@@ -77,7 +74,7 @@ func (sh *SubstrateHarvester) updateValidators(fn harvester.ErrorHandler,
 			return err
 		}
 
-		parentAccount, err := accountIdToString(parentIdentity.Account)
+		parentAccount, err := AccountIdToString(parentIdentity.Account)
 		if err != nil {
 			return err
 		}
@@ -89,7 +86,7 @@ func (sh *SubstrateHarvester) updateValidators(fn harvester.ErrorHandler,
 
 		children := make([]string, 0)
 		for _, c := range subAccounts.Accounts {
-			childAccount, err := accountIdToString(c)
+			childAccount, err := AccountIdToString(c)
 			if err != nil {
 				return err
 			}
@@ -125,7 +122,7 @@ func (sh *SubstrateHarvester) updateValidators(fn harvester.ErrorHandler,
 		}}
 
 		for _, nominee := range eraStakers.Others {
-			address, _ := accountIdToString(nominee.Who)
+			address, _ := AccountIdToString(nominee.Who)
 			nominators = append(nominators, harvester.Nominator{
 				Address: address,
 				Stake:   fmt.Sprint(nominee.Value.Int64()),
@@ -289,26 +286,6 @@ func (sh *SubstrateHarvester) getStashAccounts() ([]string, error) {
 	return stashStorageKeys, nil
 }
 
-func accountIdToString(id types.AccountID) (string, error) {
-	address, err := subkey.SS58Address(id[:], 2)
-	if err != nil {
-		return "", err
-	}
-
-	return address, nil
-}
-
-func stringToAccountId(account string) (types.AccountID, error) {
-	addressBytes := base58.Decode(account)
-	publicKey := addressBytes[1 : len(addressBytes)-2]
-	len := len(publicKey)
-	if len != 32 {
-		return types.NewAccountID(nil), fmt.Errorf("%s address yielded wrong length", account)
-	}
-
-	return types.NewAccountID(publicKey), nil
-}
-
 func decodeStashKey(key types.StorageKey) (string, error) {
 	keyString := key.Hex()[82:]
 	keyBytes, err := types.HexDecodeString(keyString)
@@ -316,7 +293,7 @@ func decodeStashKey(key types.StorageKey) (string, error) {
 		return "", err
 	}
 
-	validatorAddress, err := accountIdToString(types.NewAccountID(keyBytes))
+	validatorAddress, err := AccountIdToString(types.NewAccountID(keyBytes))
 	if err != nil {
 		return "", err
 	}
@@ -325,7 +302,7 @@ func decodeStashKey(key types.StorageKey) (string, error) {
 }
 
 func getValidatorStatus(parent []types.AccountID, child types.AccountID) string {
-	check := contains(parent, child)
+	check := Contains(parent, child)
 	if check {
 		return "active"
 	}
@@ -356,7 +333,7 @@ func (sh *SubstrateHarvester) getEraStakers(accountID types.AccountID) (types.Ex
 		return erasStakers, err
 	}
 
-	eraIndex := uintsToBytes([]uint32{uint32(index)})
+	eraIndex := UintsToBytes([]uint32{uint32(index)})
 	key, err := sh.GetStorageDataKey("Staking", "ErasStakers", eraIndex, accountID[:])
 	if err != nil {
 		return erasStakers, err
@@ -409,22 +386,4 @@ func (sh *SubstrateHarvester) getValidatorLockedBalance(accountID types.AccountI
 	}
 
 	return result, nil
-}
-
-func contains(parent []types.AccountID, child types.AccountID) bool {
-	for _, value := range parent {
-		if value == child {
-			return true
-		}
-	}
-
-	return false
-}
-
-func uintsToBytes(vs []uint32) []byte {
-	buf := make([]byte, len(vs)*4)
-	for i, v := range vs {
-		binary.LittleEndian.PutUint32(buf[i*4:], v)
-	}
-	return buf
 }

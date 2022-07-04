@@ -148,6 +148,14 @@ func TestGetters(t *testing.T) {
 		keys, err := mockSh.CreateStorageKeyUnsafe("Staking", "Validators")
 		assert.Nil(t, err)
 		assert.Greater(t, len(keys), 1)
+
+		keys, err = mockSh.CreateStorageKeyUnsafe("Staking", "ErasStakers", i32tob(0))
+		assert.Nil(t, err)
+		assert.Greater(t, len(keys), 1)
+
+		keys, err = mockSh.CreateStorageKeyUnsafe("Staking", "ErasStakerssss", i32tob(0))
+		assert.NotNil(t, err)
+		assert.Equal(t, len(keys), 0)
 	})
 
 	t.Run("getCurrentSessionValidators()", func(t *testing.T) {

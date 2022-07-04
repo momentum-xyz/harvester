@@ -79,7 +79,7 @@ func (sh *SubstrateHarvester) getSlashes(fn harvester.ErrorHandler,
 	}
 
 	for _, accountID := range validatorAccountIDs {
-		address, err := accountIdToString(accountID)
+		address, err := AccountIdToString(accountID)
 		if err != nil {
 			fn(err)
 			continue
@@ -111,7 +111,7 @@ func (sh *SubstrateHarvester) getSlashes(fn harvester.ErrorHandler,
 func (sh *SubstrateHarvester) getValidatorSlashInEra(era uint32, address string) (*ValidatorSlashInEra, error) {
 	var validatorSlashInEra ValidatorSlashInEra
 	eraDepth, _ := sh.GetEraDepth(era)
-	accountID, err := stringToAccountId(address)
+	accountID, err := StringToAccountId(address)
 
 	if err != nil {
 		return nil, err
