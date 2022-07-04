@@ -171,4 +171,16 @@ func TestGetters(t *testing.T) {
 		assert.IsType(t, reflect.TypeOf(totalIssuance), reflect.TypeOf(types.NewU128(*big.NewInt(0))))
 		assert.Greater(t, totalIssuance.Uint64(), uint64(0))
 	})
+
+	t.Run("GetAuctionCounter()", func(t *testing.T) {
+		auctionCounter, err := mockSh.GetAuctionCounter()
+		assert.Nil(t, err)
+		assert.IsType(t, auctionCounter, types.U32(0))
+	})
+
+	t.Run("GetGenesisHash()", func(t *testing.T) {
+		hash, err := mockSh.GetGenesisHash()
+		assert.Nil(t, err)
+		assert.IsType(t, hash, types.Hash{})
+	})
 }
