@@ -25,7 +25,7 @@ func TestUtils(t *testing.T) {
 
 	t.Run("AccountIdToString()", func(t *testing.T) {
 		a := types.NewAddressFromAccountID([]byte{1})
-		accountIdStr, err := AccountIdToString(a.AsAccountID)
+		accountIdStr, err := AccountIdToString(a.AsAccountID, mockSh.cfg.Name)
 		accountId, _ := StringToAccountId(accountIdStr)
 		assert.Equal(t, a.AsAccountID, accountId)
 		assert.Nil(t, err)
@@ -33,7 +33,7 @@ func TestUtils(t *testing.T) {
 
 	t.Run("StringToAccountId()", func(t *testing.T) {
 		a := types.NewAddressFromAccountID([]byte{2})
-		accountIdStr, _ := AccountIdToString(a.AsAccountID)
+		accountIdStr, _ := AccountIdToString(a.AsAccountID, mockSh.cfg.Name)
 		accountId, err := StringToAccountId(accountIdStr)
 		assert.Equal(t, a.AsAccountID, accountId)
 		assert.Nil(t, err)

@@ -39,7 +39,7 @@ var mockCfg = harvester.Config{
 	},
 }
 var mockChainCfg = harvester.ChainConfig{
-	Name:         "harvester",
+	Name:         "kusama",
 	RPC:          "ws://localhost:9944",
 	ActiveTopics: []string{"block-creation-event"},
 }
@@ -47,8 +47,8 @@ var mockChainCfg = harvester.ChainConfig{
 var mockPmc, _ = performancemonitor.NewPerformanceMonitorClient(&mockCfg, func(err error) {})
 var mockDB, _, _ = mysql.NewDB(&mockCfg.MySQL)
 var mockRepository, _ = repository.NewRepository(mockDB, mockCfg.MySQL.Migrate)
-var mqttClient = mqtt.GetMQTTClient(&mockCfg.MQTT, func(err error) {})
-var mockPublisher, _ = publisher.NewPublisher(mqttClient)
+var mockMQTTClient = mqtt.GetMQTTClient(&mockCfg.MQTT, func(err error) {})
+var mockPublisher, _ = publisher.NewPublisher(mockMQTTClient)
 var mockHarvester, _ = harvester.NewHarvester(&mockCfg, mockRepository, mockPublisher, mockPmc)
 var mockSh, _ = NewHarvester(mockChainCfg, mockHarvester.Publisher, mockHarvester.Repository)
 

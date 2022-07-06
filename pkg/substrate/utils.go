@@ -10,7 +10,7 @@ import (
 	"github.com/vedhavyas/go-subkey"
 )
 
-func Contains(parent []types.AccountID, child types.AccountID) bool {
+func Contains[T comparable](parent []T, child T) bool {
 	for _, value := range parent {
 		if value == child {
 			return true
@@ -28,8 +28,12 @@ func UintsToBytes(vs []uint32) []byte {
 	return buf
 }
 
-func AccountIdToString(id types.AccountID) (string, error) {
-	address, err := subkey.SS58Address(id[:], 2)
+func AccountIdToString(id types.AccountID, network ...string) (string, error) {
+	networkId := uint8(2) // default network
+	if len(network) > 0 {
+		networkId = getNetworkID(network[0])
+	}
+	address, err := subkey.SS58Address(id[:], networkId)
 	if err != nil {
 		return "", err
 	}

@@ -74,7 +74,7 @@ func (sh *SubstrateHarvester) updateValidators(fn harvester.ErrorHandler,
 			return err
 		}
 
-		parentAccount, err := AccountIdToString(parentIdentity.Account)
+		parentAccount, err := AccountIdToString(parentIdentity.Account, sh.cfg.Name)
 		if err != nil {
 			return err
 		}
@@ -86,7 +86,7 @@ func (sh *SubstrateHarvester) updateValidators(fn harvester.ErrorHandler,
 
 		children := make([]string, 0)
 		for _, c := range subAccounts.Accounts {
-			childAccount, err := AccountIdToString(c)
+			childAccount, err := AccountIdToString(c, sh.cfg.Name)
 			if err != nil {
 				return err
 			}
@@ -122,7 +122,7 @@ func (sh *SubstrateHarvester) updateValidators(fn harvester.ErrorHandler,
 		}}
 
 		for _, nominee := range eraStakers.Others {
-			address, _ := AccountIdToString(nominee.Who)
+			address, _ := AccountIdToString(nominee.Who, sh.cfg.Name)
 			nominators = append(nominators, harvester.Nominator{
 				Address: address,
 				Stake:   fmt.Sprint(nominee.Value.Int64()),
@@ -275,7 +275,7 @@ func (sh *SubstrateHarvester) getStashAccounts() ([]string, error) {
 	}
 
 	for _, key := range stashKeys {
-		validatorAddress, err := decodeStashKey(key)
+		validatorAddress, err := sh.decodeStashKey(key)
 		if err != nil {
 			continue // FIXME improve error handling
 		}
@@ -286,14 +286,14 @@ func (sh *SubstrateHarvester) getStashAccounts() ([]string, error) {
 	return stashStorageKeys, nil
 }
 
-func decodeStashKey(key types.StorageKey) (string, error) {
+func (sh *SubstrateHarvester) decodeStashKey(key types.StorageKey) (string, error) {
 	keyString := key.Hex()[82:]
 	keyBytes, err := types.HexDecodeString(keyString)
 	if err != nil {
 		return "", err
 	}
 
-	validatorAddress, err := AccountIdToString(types.NewAccountID(keyBytes))
+	validatorAddress, err := AccountIdToString(types.NewAccountID(keyBytes), sh.cfg.Name)
 	if err != nil {
 		return "", err
 	}

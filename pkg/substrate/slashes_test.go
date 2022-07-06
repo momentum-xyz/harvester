@@ -12,18 +12,28 @@ import (
 )
 
 func TestGetSlashes(t *testing.T) {
-	err := mockSh.getSlashes(func(err error) {}, mockHarvester.PerformanceMonitorClient, "slashes")
-	assert.Nil(t, err)
+	t.Run("processSlashes()", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		go func() {
+			time.Sleep(2 * time.Second)
+			ctx.Done()
+			cancel()
+		}()
+		err := mockSh.processSlashes(ctx, func(err error) {}, mockHarvester.PerformanceMonitorClient, "slashes", 1*time.Second)
+		assert.NotNil(t, err)
+		assert.Contains(t, err.Error(), "context canceled")
+	})
 
-	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		time.Sleep(2 * time.Second)
-		ctx.Done()
-		cancel()
-	}()
-	err = mockSh.processSlashes(ctx, func(err error) {}, mockHarvester.PerformanceMonitorClient, "slashes", 1*time.Second)
-	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "context canceled")
+	t.Run("getSlashes()", func(t *testing.T) {
+		err := mockSh.getSlashes(func(err error) {}, mockHarvester.PerformanceMonitorClient, "slashes")
+		assert.Nil(t, err)
+	})
+
+	t.Run("getValidatorSlashesInEra()", func(t *testing.T) {
+		result, err := mockSh.getValidatorSlashesInEra(func(err error) {}, uint32(0))
+		assert.NotNil(t, result)
+		assert.Nil(t, err)
+	})
 
 	t.Run("publishSlashEvent()", func(t *testing.T) {
 		err := mockSh.publishSlashEvent(Slash{
@@ -35,8 +45,8 @@ func TestGetSlashes(t *testing.T) {
 		}, "slashes")
 		assert.Nil(t, err)
 
-		_mqttClient := mqtt.GetMQTTClient(&mqtt.Config{}, func(err error) {})
-		_mockPublisher, _ := publisher.NewPublisher(_mqttClient)
+		_mockMQTTClient := mqtt.GetMQTTClient(&mqtt.Config{}, func(err error) {})
+		_mockPublisher, _ := publisher.NewPublisher(_mockMQTTClient)
 		_mockHarvester, _ := harvester.NewHarvester(&mockCfg, mockRepository, _mockPublisher, mockPmc)
 		_mockSh, _ := NewHarvester(mockChainCfg, _mockHarvester.Publisher, _mockHarvester.Repository)
 		err = _mockSh.publishSlashEvent(Slash{
