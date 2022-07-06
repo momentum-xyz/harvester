@@ -205,3 +205,26 @@ func (sh *SubstrateHarvester) GetTotalIssuance() (types.U128, error) {
 
 	return totalIssuance, nil
 }
+
+func (sh *SubstrateHarvester) GetAuctionCounter() (types.U32, error) {
+	var auctionCounter types.U32
+	key, err := sh.GetStorageDataKey("Auctions", "AuctionCounter")
+	if err != nil {
+		return auctionCounter, err
+	}
+
+	err = sh.GetStorageLatest(key, &auctionCounter)
+	if err != nil {
+		return auctionCounter, err
+	}
+
+	return auctionCounter, nil
+}
+
+func (sh *SubstrateHarvester) GetGenesisHash() (types.Hash, error) {
+	hash, err := sh.api.RPC.Chain.GetBlockHash(0)
+	if err != nil {
+		return hash, err
+	}
+	return hash, nil
+}

@@ -43,4 +43,11 @@ func TestUtils(t *testing.T) {
 		assert.NotNil(t, err)
 		assert.Equal(t, err.Error(), "xxx address yielded wrong length")
 	})
+
+	t.Run("Round()", func(t *testing.T) {
+		assert.Equal(t, Round(12.578, 2), 12.58)
+		assert.NotEqual(t, Round(12.578, 3), 12.58)
+		assert.Equal(t, Round(12.573, 2), 12.57)
+		assert.NotEqual(t, Round(12.573, 2), 12.58)
+	})
 }

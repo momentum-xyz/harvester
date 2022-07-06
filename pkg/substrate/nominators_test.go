@@ -11,7 +11,6 @@ import (
 func TestNominators(t *testing.T) {
 	t.Run("getActiveNominators()", func(t *testing.T) {
 		nominators, err := mockSh.getActiveNominators(func(err error) {})
-		assert.NotNil(t, nominators)
 		assert.Nil(t, err)
 		assert.Equal(t, reflect.TypeOf(nominators), reflect.SliceOf(reflect.TypeOf(types.NewAccountID([]byte{}))))
 	})

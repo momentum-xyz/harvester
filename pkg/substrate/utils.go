@@ -3,6 +3,7 @@ package substrate
 import (
 	"encoding/binary"
 	"fmt"
+	"math"
 
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/decred/base58"
@@ -45,4 +46,9 @@ func StringToAccountId(account string) (types.AccountID, error) {
 	}
 
 	return types.NewAccountID(publicKey), nil
+}
+
+func Round(val float64, precision uint) float64 {
+	ratio := math.Pow(10, float64(precision))
+	return math.Round(val*ratio) / ratio
 }
