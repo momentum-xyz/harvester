@@ -98,5 +98,8 @@ func (sh *SubstrateHarvester) GetInflation(stakingRatio float32) (Inflation, err
 		return 0
 	}()
 
+	// convert IdealStake to percentage
+	inflation.IdealStake = inflation.IdealStake * 100
+
 	return inflation, err
 }
