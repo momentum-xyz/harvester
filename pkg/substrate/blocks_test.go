@@ -51,8 +51,8 @@ func TestBlocks(t *testing.T) {
 		newHead, _ := mockSh.api.RPC.Chain.GetHeaderLatest()
 		assert.IsType(t, newHead, &types.Header{})
 
-		_mqttClient := mqtt.GetMQTTClient(&mqtt.Config{}, func(err error) {})
-		_mockPublisher, _ := publisher.NewPublisher(_mqttClient)
+		_mockMQTTClient := mqtt.GetMQTTClient(&mqtt.Config{}, func(err error) {})
+		_mockPublisher, _ := publisher.NewPublisher(_mockMQTTClient)
 		_mockHarvester, _ := harvester.NewHarvester(&mockCfg, mockRepository, _mockPublisher, mockPmc)
 		_mockSh, _ := NewHarvester(mockChainCfg, _mockHarvester.Publisher, _mockHarvester.Repository)
 
@@ -72,8 +72,8 @@ func TestBlocks(t *testing.T) {
 		finalizedHead, _ := mockSh.api.RPC.Chain.GetFinalizedHead()
 		assert.IsType(t, finalizedHead, types.Hash{})
 
-		_mqttClient := mqtt.GetMQTTClient(&mqtt.Config{}, func(err error) {})
-		_mockPublisher, _ := publisher.NewPublisher(_mqttClient)
+		_mockMQTTClient := mqtt.GetMQTTClient(&mqtt.Config{}, func(err error) {})
+		_mockPublisher, _ := publisher.NewPublisher(_mockMQTTClient)
 		_mockHarvester, _ := harvester.NewHarvester(&mockCfg, mockRepository, _mockPublisher, mockPmc)
 		_mockSh, _ := NewHarvester(mockChainCfg, _mockHarvester.Publisher, _mockHarvester.Repository)
 
@@ -96,8 +96,8 @@ func TestBlocks(t *testing.T) {
 		newHead, _ := mockSh.api.RPC.Chain.GetHeaderLatest()
 		assert.IsType(t, newHead, &types.Header{})
 
-		_mqttClient := mqtt.GetMQTTClient(&mqtt.Config{}, func(err error) {})
-		_mockPublisher, _ := publisher.NewPublisher(_mqttClient)
+		_mockMQTTClient := mqtt.GetMQTTClient(&mqtt.Config{}, func(err error) {})
+		_mockPublisher, _ := publisher.NewPublisher(_mockMQTTClient)
 		_mockHarvester, _ := harvester.NewHarvester(&mockCfg, mockRepository, _mockPublisher, mockPmc)
 		_mockSh, _ := NewHarvester(mockChainCfg, _mockHarvester.Publisher, _mockHarvester.Repository)
 
@@ -131,8 +131,8 @@ func TestBlocks(t *testing.T) {
 		validatorID, _ := AccountIdToString(activeValidators[0])
 		assert.Equal(t, reflect.TypeOf(activeValidators), reflect.SliceOf(reflect.TypeOf(types.NewAccountID([]byte("")))))
 
-		_mqttClient := mqtt.GetMQTTClient(&mqtt.Config{}, func(err error) {})
-		_mockPublisher, _ := publisher.NewPublisher(_mqttClient)
+		_mockMQTTClient := mqtt.GetMQTTClient(&mqtt.Config{}, func(err error) {})
+		_mockPublisher, _ := publisher.NewPublisher(_mockMQTTClient)
 		_mockHarvester, _ := harvester.NewHarvester(&mockCfg, mockRepository, _mockPublisher, mockPmc)
 		_mockSh, _ := NewHarvester(mockChainCfg, _mockHarvester.Publisher, _mockHarvester.Repository)
 

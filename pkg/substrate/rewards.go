@@ -92,7 +92,7 @@ func (sh *SubstrateHarvester) publishErasRewardPoints(fn harvester.ErrorHandler,
 		return err
 	}
 
-	log.Logln(0, fmt.Sprintf("%s - Publishing reward event for era %d", sh.cfg.Name, activeEra))
+	log.Debug(fmt.Sprintf("%s - Publishing reward event for era %d", sh.cfg.Name, activeEra))
 	err = sh.publisher.Publish(fmt.Sprintf("harvester/%s/%s", sh.cfg.Name, topic), string(rewardsJson))
 	if err != nil {
 		return err

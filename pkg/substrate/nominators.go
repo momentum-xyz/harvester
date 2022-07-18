@@ -12,12 +12,12 @@ func (sh *SubstrateHarvester) getActiveNominators(fn harvester.ErrorHandler) ([]
 		return nil, err
 	}
 
-	stashKeys, err := sh.GetKeysLatest(k)
+	keys, err := sh.GetKeysLatest(k)
 	if err != nil {
 		return nil, err
 	}
 
-	changes, err := sh.QueryStorageAt(stashKeys)
+	changes, err := sh.QueryStorageAt(keys)
 	if err != nil {
 		return nil, err
 	}

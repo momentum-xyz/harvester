@@ -78,27 +78,25 @@ func (sh *SubstrateHarvester) getSlashes(fn harvester.ErrorHandler,
 		return errors.Wrap(err, "error while fetching current session validators")
 	}
 
+	var validatorAddresses []string
 	for _, accountID := range validatorAccountIDs {
-		address, err := AccountIdToString(accountID)
+		address, err := AccountIdToString(accountID, sh.cfg.Name)
 		if err != nil {
 			fn(err)
 			continue
 		}
+		validatorAddresses = append(validatorAddresses, address)
+	}
 
-		validatorSlashInEra, err := sh.getValidatorSlashInEra(activeEra, address)
-		if err != nil {
-			fn(err)
-			continue
-		}
+	slashes, err := sh.getValidatorSlashesInEra(fn, activeEra)
+	if err != nil {
+		return errors.Wrap(err, "error while fetching slashes")
+	}
 
-		if validatorSlashInEra.BalanceOf.Int != nil {
-			err = sh.publishSlashEvent(Slash{
-				AccountID:    address,
-				Amount:       validatorSlashInEra.BalanceOf.Int64(),
-				EraIndex:     activeEra,
-				SessionIndex: uint32(sessionIndex),
-				Type:         "validator",
-			}, topic)
+	for _, slash := range slashes {
+		if Contains(validatorAddresses, slash.AccountID) {
+			slash.SessionIndex = uint32(sessionIndex)
+			err = sh.publishSlashEvent(slash, topic)
 			if err != nil {
 				fn(err)
 			}
@@ -108,26 +106,43 @@ func (sh *SubstrateHarvester) getSlashes(fn harvester.ErrorHandler,
 	return nil
 }
 
-func (sh *SubstrateHarvester) getValidatorSlashInEra(era uint32, address string) (*ValidatorSlashInEra, error) {
-	var validatorSlashInEra ValidatorSlashInEra
+func (sh *SubstrateHarvester) getValidatorSlashesInEra(fn harvester.ErrorHandler, era uint32) ([]Slash, error) {
+	result := []Slash{}
 	eraDepth, _ := sh.GetEraDepth(era)
-	accountID, err := StringToAccountId(address)
-
-	if err != nil {
-		return nil, err
-	}
-
-	key, err := sh.GetStorageDataKey("Staking", "ValidatorSlashInEra", eraDepth, accountID[:])
+	key, err := sh.CreateStorageKeyUnsafe("Staking", "ValidatorSlashInEra", eraDepth)
 	if err != nil {
 		return nil, errors.Wrap(err, "error while creating validator slash in era storage data key")
 	}
 
-	err = sh.GetStorageLatest(key, &validatorSlashInEra)
+	keys, err := sh.GetKeysLatest(key)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error while fetching validator slash in era:%d and accountId:%s", era, address)
+		return nil, err
 	}
 
-	return &validatorSlashInEra, nil
+	changes, err := sh.QueryStorageAt(keys)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, change := range changes {
+		var r ValidatorSlashInEra
+		err = types.DecodeFromBytes(change.StorageData, &r)
+		if err != nil {
+			fn(err)
+			continue
+		}
+
+		accountId := types.NewAccountID(change.StorageKey[len(change.StorageKey)-32:])
+		address, err := AccountIdToString(accountId, sh.cfg.Name)
+		if err != nil {
+			fn(err)
+			continue
+		}
+
+		result = append(result, Slash{AccountID: address, Amount: r.BalanceOf.Int64(), EraIndex: era, Type: "validator"})
+	}
+
+	return result, nil
 }
 
 func (sh *SubstrateHarvester) publishSlashEvent(slashEvent Slash, topic string) error {
@@ -137,7 +152,7 @@ func (sh *SubstrateHarvester) publishSlashEvent(slashEvent Slash, topic string) 
 	}
 
 	account, era := slashEvent.AccountID, slashEvent.EraIndex
-	log.Logln(0, fmt.Sprintf("%s - Publishing slash event for account:%s in era %d", sh.cfg.Name, account, era))
+	log.Debug(fmt.Sprintf("%s - Publishing slash event for account: %s in era: %d", sh.cfg.Name, account, era))
 	err = sh.publisher.Publish(fmt.Sprintf("harvester/%s/%s/%s", sh.cfg.Name, topic, account), string(slashJson))
 	if err != nil {
 		return err

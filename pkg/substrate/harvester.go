@@ -52,7 +52,7 @@ func getNetworkID(name string) uint8 {
 	case "polkadot":
 		return uint8(1)
 	default:
-		log.Logln(0, "configured network name not recognized, defaulting to kusama")
+		log.Debug("configured network name not recognized, defaulting to kusama")
 		return uint8(2)
 	}
 }
