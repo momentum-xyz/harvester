@@ -18,9 +18,17 @@ func (sh *SubstrateHarvester) ProcessValidators(ctx context.Context,
 	fn harvester.ErrorHandler,
 	pmc harvester.PerformanceMonitorClient,
 	topic string) error {
+	return sh.processErasRewardPoints(ctx, fn, pmc, topic, 5*time.Minute)
+}
+
+func (sh *SubstrateHarvester) processValidators(ctx context.Context,
+	fn harvester.ErrorHandler,
+	pmc harvester.PerformanceMonitorClient,
+	topic string,
+	d time.Duration) error {
 	log.Debug("processing validators")
 
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(d)
 	defer ticker.Stop()
 
 	for {
