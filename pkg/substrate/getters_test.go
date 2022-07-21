@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/OdysseyMomentumExperience/harvester/pkg/harvester"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -18,6 +19,8 @@ func hexToInt(hex string) (int64, error) {
 }
 
 func TestGetters(t *testing.T) {
+	stashAccounts, _ := mockSh.getStashAccounts()
+
 	t.Run("GetStorageDataKey()", func(t *testing.T) {
 		key, err := mockSh.GetStorageDataKey("Session", "CurrentIndex")
 		assert.Greater(t, len(key), 0)
@@ -158,13 +161,6 @@ func TestGetters(t *testing.T) {
 		assert.Equal(t, len(keys), 0)
 	})
 
-	t.Run("getCurrentSessionValidators()", func(t *testing.T) {
-		validatorAccountIDs, err := mockSh.getCurrentSessionValidators()
-		assert.Nil(t, err)
-		assert.IsType(t, &validatorAccountIDs[0], &types.AccountID{})
-		assert.Greater(t, len(validatorAccountIDs), 0)
-	})
-
 	t.Run("GetTotalIssuance()", func(t *testing.T) {
 		totalIssuance, err := mockSh.GetTotalIssuance()
 		assert.Nil(t, err)
@@ -182,5 +178,36 @@ func TestGetters(t *testing.T) {
 		hash, err := mockSh.GetGenesisHash()
 		assert.Nil(t, err)
 		assert.IsType(t, hash, types.Hash{})
+	})
+
+	t.Run("GetSystemProperties", func(t *testing.T) {
+		res, err := mockSh.GetSystemProperties()
+		assert.Nil(t, err)
+		assert.IsType(t, res, SystemProperties{})
+	})
+
+	t.Run("GetSystemAccountInfo", func(t *testing.T) {
+		accountID, _ := StringToAccountId(stashAccounts[0])
+		res, err := mockSh.GetSystemAccountInfo(accountID)
+		assert.Nil(t, err)
+		assert.IsType(t, res, harvester.AccountInfo{})
+		assert.NotNil(t, res.Data.Free)
+		assert.Greater(t, res.Data.Free.Int64(), types.NewU128(*big.NewInt(0)).Int64())
+
+		res, err = mockSh.GetSystemAccountInfo(types.NewAccountID([]byte{0}))
+		assert.Nil(t, err)
+		assert.Nil(t, res.Data.Free.Int)
+	})
+
+	t.Run("GetAccountBalance", func(t *testing.T) {
+		accountID, _ := StringToAccountId(stashAccounts[0])
+		res, err := mockSh.GetAccountBalance(accountID)
+		assert.Nil(t, err)
+		assert.Greater(t, res, float64(0))
+		assert.IsType(t, res, float64(0))
+
+		res, err = mockSh.GetAccountBalance(types.NewAccountID([]byte{0}))
+		assert.Nil(t, err)
+		assert.Equal(t, res, float64(0))
 	})
 }
