@@ -1,10 +1,20 @@
 package substrate
 
 import (
+	"math"
+
+	"github.com/OdysseyMomentumExperience/harvester/pkg/constants"
+	"github.com/OdysseyMomentumExperience/harvester/pkg/harvester"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/xxhash"
 	"github.com/pkg/errors"
 )
+
+type SystemProperties struct {
+	SS58Format    uint8
+	TokenDecimals uint32
+	TokenSymbol   string
+}
 
 func (sh *SubstrateHarvester) GetStorageDataKey(prefix string, method string, args ...[]byte) (types.StorageKey, error) {
 	key, err := types.CreateStorageKey(sh.metadata, prefix, method, args...)
@@ -175,22 +185,6 @@ func (sh *SubstrateHarvester) FindStorageEntryMetadata(prefix string, method str
 	return entryMeta, nil
 }
 
-func (sh *SubstrateHarvester) getCurrentSessionValidators() ([]types.AccountID, error) {
-	var validatorAccountIDs []types.AccountID
-
-	key, err := sh.GetStorageDataKey("Session", "Validators", nil)
-	if err != nil {
-		return validatorAccountIDs, err
-	}
-
-	err = sh.GetStorageLatest(key, &validatorAccountIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	return validatorAccountIDs, nil
-}
-
 func (sh *SubstrateHarvester) GetTotalIssuance() (types.U128, error) {
 	var totalIssuance types.U128
 	key, err := sh.GetStorageDataKey("Balances", "TotalIssuance")
@@ -227,4 +221,47 @@ func (sh *SubstrateHarvester) GetGenesisHash() (types.Hash, error) {
 		return hash, err
 	}
 	return hash, nil
+}
+
+func (sh *SubstrateHarvester) GetSystemProperties() (SystemProperties, error) {
+	var p SystemProperties
+	err := sh.api.Client.Call(&p, "system_properties")
+	return p, err
+}
+
+func (sh *SubstrateHarvester) GetSystemAccountInfo(accountID types.AccountID) (harvester.AccountInfo, error) {
+	var accountInfo harvester.AccountInfo
+
+	key, err := sh.GetStorageDataKey("System", "Account", accountID[:])
+	if err != nil {
+		return accountInfo, err
+	}
+
+	err = sh.GetStorageLatest(key, &accountInfo)
+	if err != nil {
+		return accountInfo, err
+	}
+
+	return accountInfo, nil
+}
+
+func (sh *SubstrateHarvester) GetAccountBalance(accountID types.AccountID) (float64, error) {
+	accountInfo, err := sh.GetSystemAccountInfo(accountID)
+	if err != nil || accountInfo.Data.Free.Int == nil {
+		return 0, err
+	}
+
+	systemProperties, err := sh.GetSystemProperties()
+	if err != nil {
+		return 0, err
+	}
+
+	decimals := systemProperties.TokenDecimals
+	if decimals == 0 {
+		decimals = constants.DefaultTokenDecimals
+	}
+
+	balance := float64(accountInfo.Data.Free.Int64()) / math.Pow10(int(decimals))
+
+	return balance, nil
 }

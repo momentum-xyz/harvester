@@ -93,7 +93,7 @@ func (sh *SubstrateHarvester) updateValidators(fn harvester.ErrorHandler,
 			children = append(children, childAccount)
 		}
 
-		validatorAccountInfo, err := sh.getSystemAccountInfo(validatorNode)
+		validatorAccountInfo, err := sh.GetSystemAccountInfo(validatorNode)
 		if err != nil {
 			return err
 		}
@@ -176,6 +176,22 @@ func (sh *SubstrateHarvester) updateValidators(fn harvester.ErrorHandler,
 		}
 	}
 	return nil
+}
+
+func (sh *SubstrateHarvester) getCurrentSessionValidators() ([]types.AccountID, error) {
+	var validatorAccountIDs []types.AccountID
+
+	key, err := sh.GetStorageDataKey("Session", "Validators", nil)
+	if err != nil {
+		return validatorAccountIDs, err
+	}
+
+	err = sh.GetStorageLatest(key, &validatorAccountIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	return validatorAccountIDs, nil
 }
 
 func (sh *SubstrateHarvester) getValidatorPreferences(accountID types.AccountID) (harvester.ValidatorPreferences, error) {
@@ -345,22 +361,6 @@ func (sh *SubstrateHarvester) getEraStakers(accountID types.AccountID) (types.Ex
 	}
 
 	return erasStakers, nil
-}
-
-func (sh *SubstrateHarvester) getSystemAccountInfo(accountID types.AccountID) (harvester.AccountInfo, error) {
-	var accountInfo harvester.AccountInfo
-
-	key, err := sh.GetStorageDataKey("System", "Account", accountID[:])
-	if err != nil {
-		return accountInfo, err
-	}
-
-	err = sh.GetStorageLatest(key, &accountInfo)
-	if err != nil {
-		return accountInfo, err
-	}
-
-	return accountInfo, nil
 }
 
 func (sh *SubstrateHarvester) getValidatorLockedBalance(accountID types.AccountID) ([]harvester.ValidatorBalancesLocked, error) {
