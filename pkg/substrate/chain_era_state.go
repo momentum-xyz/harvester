@@ -32,8 +32,16 @@ func (sh *SubstrateHarvester) ProcessChainEraState(ctx context.Context,
 	fn harvester.ErrorHandler,
 	pmc harvester.PerformanceMonitorClient,
 	topic string) error {
+	return sh.processChainEraState(ctx, fn, pmc, topic, 5*time.Minute)
+}
 
-	ticker := time.NewTicker(5 * time.Minute)
+func (sh *SubstrateHarvester) processChainEraState(ctx context.Context,
+	fn harvester.ErrorHandler,
+	pmc harvester.PerformanceMonitorClient,
+	topic string,
+	d time.Duration) error {
+
+	ticker := time.NewTicker(d)
 
 	defer ticker.Stop()
 

@@ -32,8 +32,16 @@ func (sh *SubstrateHarvester) ProcessErasRewardPoints(ctx context.Context,
 	fn harvester.ErrorHandler,
 	pmc harvester.PerformanceMonitorClient,
 	topic string) error {
+	return sh.processErasRewardPoints(ctx, fn, pmc, topic, 60*time.Second)
+}
 
-	ticker := time.NewTicker(60 * time.Second)
+func (sh *SubstrateHarvester) processErasRewardPoints(ctx context.Context,
+	fn harvester.ErrorHandler,
+	pmc harvester.PerformanceMonitorClient,
+	topic string,
+	d time.Duration) error {
+
+	ticker := time.NewTicker(d)
 
 	defer ticker.Stop()
 

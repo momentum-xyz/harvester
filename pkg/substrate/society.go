@@ -15,8 +15,16 @@ func (sh *SubstrateHarvester) ProcessSocietyMembers(ctx context.Context,
 	fn harvester.ErrorHandler,
 	pmc harvester.PerformanceMonitorClient,
 	topic string) error {
+	return sh.processSocietyMembers(ctx, fn, pmc, topic, 60*time.Second)
+}
 
-	ticker := time.NewTicker(60 * time.Second)
+func (sh *SubstrateHarvester) processSocietyMembers(ctx context.Context,
+	fn harvester.ErrorHandler,
+	pmc harvester.PerformanceMonitorClient,
+	topic string,
+	d time.Duration) error {
+
+	ticker := time.NewTicker(d)
 	defer ticker.Stop()
 	for {
 		var err error
